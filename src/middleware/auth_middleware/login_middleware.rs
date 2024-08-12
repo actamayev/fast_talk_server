@@ -1,104 +1,54 @@
-use actix_web::{web, HttpRequest, HttpResponse, Result, FromRequest};
-use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
-use actix_web::Error;
-use futures::future::{ok, Ready};
-use futures::Future;
-use std::pin::Pin;
-use validator::{Validate, ValidationError};
-use serde::Deserialize;
-use actix_web::body::{EitherBody, BoxBody};
+use actix_web::{dev::{Service, ServiceRequest, ServiceResponse, Transform}, Error};
+use futures::future::{ok, Ready, LocalBoxFuture};
+use std::rc::Rc;
+use std::task::{Context, Poll};
 
-// Define the structs with validation
-#[derive(Debug, Validate, Deserialize)]
-pub struct LoginInformation {
-    #[validate(length(min = 3, max = 100))]
-    contact: String,
-
-    #[validate(length(min = 6, max = 100))]
-    password: String,
-}
-
-#[derive(Debug, Validate, Deserialize)]
-pub struct LoginRequest {
-    #[validate]
-    login_information: LoginInformation,
-}
-
-// Middleware for validating the login request
 pub struct ValidateLogin;
 
 impl<S, B> Transform<S, ServiceRequest> for ValidateLogin
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + Clone + 'static,
-    S::Future: 'static,
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
     B: 'static,
 {
-    type Response = ServiceResponse<EitherBody<B, BoxBody>>;
+    type Response = ServiceResponse<B>;
     type Error = Error;
     type Transform = ValidateLoginMiddleware<S>;
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ok(ValidateLoginMiddleware { service })
+        ok(ValidateLoginMiddleware {
+            service: Rc::new(service),
+        })
     }
 }
 
 pub struct ValidateLoginMiddleware<S> {
-    service: S,
+    service: Rc<S>,
 }
 
 impl<S, B> Service<ServiceRequest> for ValidateLoginMiddleware<S>
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + Clone + 'static,
-    S::Future: 'static,
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
     B: 'static,
 {
-    type Response = ServiceResponse<EitherBody<B, BoxBody>>;
+    type Response = ServiceResponse<B>;
     type Error = Error;
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
+    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
 
-    fn poll_ready(
-        &self,
-        ctx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.service.poll_ready(ctx)
+    fn poll_ready(&self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        // Indicate that the service is always ready to accept a request
+        Poll::Ready(Ok(()))
     }
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        let (http_req, mut payload) = req.into_parts();
-        let service = self.service.clone();
+        let service = Rc::clone(&self.service);
 
         Box::pin(async move {
-            // Deserialize the body into LoginRequest
-            let body = web::Json::<LoginRequest>::from_request(&http_req, &mut payload).await;
-
-            // Handle validation
-            match body {
-                Ok(body) => {
-                    if let Err(validation_error) = body.validate() {
-                        return Ok(ServiceResponse::new(
-                            http_req,
-                            HttpResponse::BadRequest()
-                                .json(format!("Validation error: {:?}", validation_error))
-                                .map_into_right_body(),  // Convert to right body type BoxBody
-                        ));
-                    }
-
-                    // Replace the request with validated body
-                    let req = ServiceRequest::from_parts(http_req, payload);
-                    service
-                        .call(req)
-                        .await
-                        .map(ServiceResponse::map_into_left_body)  // Convert to left body type B
-                }
-                Err(_) => Ok(ServiceResponse::new(
-                    http_req,
-                    HttpResponse::BadRequest()
-                        .json("Invalid request format")
-                        .map_into_right_body(),  // Convert to right body type BoxBody
-                )),
-            }
+            // Here you can add validation logic for the request
+            // e.g., check for required fields in JSON body, etc.
+            // If valid, proceed to the next middleware or handler
+            service.call(req).await
         })
     }
 }
