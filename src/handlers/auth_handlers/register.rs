@@ -9,7 +9,7 @@ pub struct RegisterRequest {
 }
 
 #[derive(Serialize)]
-pub struct RegisterResponse {
+struct RegisterResponse {
     pub access_token: String,
     pub public_key: String,
 }
