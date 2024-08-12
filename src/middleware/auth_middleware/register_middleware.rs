@@ -1,5 +1,5 @@
 use actix_web::{dev::{Service, ServiceRequest, ServiceResponse, Transform}, Error};
-use futures_util::future::{ok, Ready, LocalBoxFuture};
+use futures::future::{ok, Ready, LocalBoxFuture};
 use std::rc::Rc;
 use std::task::{Context, Poll};
 
