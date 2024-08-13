@@ -1,10 +1,14 @@
 //src/handlers/login
 use actix_web::{web, HttpResponse, Error};
 use serde::{Deserialize, Serialize};
+use validator_derive::Validate;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 pub struct LoginRequest {
-    pub username: String,
+    #[validate(length(min = 3, max = 100, message = "Contact must be between 3 and 100 characters"))]
+    pub contact: String,
+
+    #[validate(length(min = 6, max = 100, message = "Password must be between 6 and 100 characters"))]
     pub password: String,
 }
 
@@ -14,7 +18,7 @@ struct LoginResponse {
     pub public_key: String,
 }
 
-pub async fn login(req: web::Json<LoginRequest>) -> Result<HttpResponse, Error> {
+pub async fn login(_req: web::Json<LoginRequest>) -> Result<HttpResponse, Error> {
     let access_token = "some_generated_jwt".to_string();
     let public_key = "some_public_key".to_string();
 
