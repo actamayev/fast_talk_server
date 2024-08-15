@@ -1,3 +1,4 @@
+//src/middleware/register_middleware.rs
 use actix_web::{dev::{Service, ServiceRequest, ServiceResponse, Transform}, Error};
 use futures::future::Ready;
 use crate::middleware::middleware_templates::base_middleware::{MiddlewareTransform, BaseMiddleware};

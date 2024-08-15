@@ -1,3 +1,4 @@
+//src/middleware/base_middleware.rs
 use actix_web::{dev::{Service, ServiceRequest, ServiceResponse}, Error};
 use futures::future::{ok, Ready, LocalBoxFuture};
 use std::rc::Rc;
