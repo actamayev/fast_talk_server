@@ -14,17 +14,17 @@ pub struct LoginRequest {
 
 #[derive(Serialize)]
 struct LoginResponse {
-    pub access_token: String,
-    pub public_key: String,
+    pub contact: String,
+    pub password: String,
 }
 
-pub async fn login(_req: web::Json<LoginRequest>) -> Result<HttpResponse, Error> {
-    let access_token = "some_generated_jwt".to_string();
-    let public_key = "some_public_key".to_string();
+pub async fn login(req: web::Json<LoginRequest>) -> Result<HttpResponse, Error> {
+    let contact = req.contact.to_string();
+    let password = req.password.to_string();
 
     let response = LoginResponse {
-        access_token,
-        public_key,
+        contact,
+        password,
     };
 
     Ok(HttpResponse::Ok().json(response))
