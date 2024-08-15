@@ -1,0 +1,39 @@
+name: Lint and Type Check
+
+on: push
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: x86_64-unknown-linux-gnu
+        profile: minimal
+
+    - name: Install Clippy
+      run: rustup component add clippy
+
+    - name: Run Clippy (Rust Linter)
+      run: cargo clippy --all-targets -- -D warnings
+
+  type-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: x86_64-unknown-linux-gnu
+        profile: minimal
+
+    - name: Run Type Check (cargo check)
+      run: cargo check --all-targets

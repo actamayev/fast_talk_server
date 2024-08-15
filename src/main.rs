@@ -2,6 +2,7 @@ mod routes;
 mod middleware;
 mod handlers;
 mod db;
+mod entities;
 
 use actix_web::{App, HttpServer, web};
 use sea_orm::DatabaseConnection;
