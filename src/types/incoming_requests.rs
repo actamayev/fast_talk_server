@@ -1,7 +1,8 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use validator_derive::Validate;
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, Serialize)] // Derive Serialize
+#[serde(deny_unknown_fields)]  // This attribute will deny any unknown fields in the JSON
 pub struct RegisterRequest {
     #[validate(email(message = "Invalid email format"))]
     pub email: String,
@@ -13,7 +14,8 @@ pub struct RegisterRequest {
     pub password: String,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, Serialize)] // Derive Serialize
+#[serde(deny_unknown_fields)]  // This attribute will deny any unknown fields in the JSON
 pub struct LoginRequest {
     #[validate(length(min = 3, max = 100, message = "Contact must be between 3 and 100 characters"))]
     pub contact: String,

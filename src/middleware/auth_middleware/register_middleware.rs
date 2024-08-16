@@ -1,12 +1,13 @@
 use actix_web::{
-    dev::{Service, ServiceRequest, ServiceResponse, Transform},
-    Error, HttpMessage, HttpResponse, web,
-    body::BoxBody,
+    dev::{Service, ServiceRequest, ServiceResponse, Payload, Transform},
+    Error, HttpResponse, web, body::BoxBody,
 };
 use futures::future::{ok, LocalBoxFuture, Ready};
 use std::rc::Rc;
 use validator::Validate;
 use serde_json::json;
+use actix_web::web::Bytes;
+use actix_http::h1;
 
 use crate::types::incoming_requests::RegisterRequest;
 
@@ -45,9 +46,9 @@ where
         std::task::Poll::Ready(Ok(()))
     }
 
-    fn call(&self, req: ServiceRequest) -> Self::Future {
+    fn call(&self, mut req: ServiceRequest) -> Self::Future {
         let service = Rc::clone(&self.service);
-
+    
         Box::pin(async move {
             // Extract the JSON body
             let payload = req.extract::<web::Json<RegisterRequest>>().await;
@@ -60,16 +61,26 @@ where
                         let response = HttpResponse::BadRequest()
                             .json(json!({"message": error_message}))
                             .map_into_boxed_body(); // Convert to `BoxBody`
-                        return Ok(req.into_response(response).map_into_boxed_body());
+                        return Ok(ServiceResponse::new(req.into_parts().0, response));
                     }
+                    // Convert the validated RegisterRequest back into JSON bytes
+                    let json_bytes = serde_json::to_vec(&*body).unwrap();
+
+                    // Create a new payload from the bytes
+                    let (mut sender, new_payload) = h1::Payload::create(true);
+                    sender.feed_data(Bytes::from(json_bytes));
+                    sender.feed_eof();
+
+                    req.set_payload(Payload::from(new_payload));
+
                     // Proceed to the next service if validation passes
                     service.call(req).await
                 }
                 Err(_) => {
                     let response = HttpResponse::BadRequest()
-                        .json(json!({"message": "Invalid request body"}))
+                        .json(json!({"message": "Invalid register request body"}))
                         .map_into_boxed_body(); // Convert to `BoxBody`
-                    Ok(req.into_response(response).map_into_body())
+                    Ok(ServiceResponse::new(req.into_parts().0, response))
                 }
             }
         })

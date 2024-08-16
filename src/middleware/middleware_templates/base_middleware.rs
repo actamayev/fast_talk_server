@@ -1,6 +1,6 @@
 //src/middleware/base_middleware.rs
 use actix_web::{dev::{Service, ServiceRequest, ServiceResponse}, Error};
-use futures::future::{ok, Ready, LocalBoxFuture};
+use futures::future::LocalBoxFuture;
 use std::rc::Rc;
 use std::task::{Context, Poll};
 
@@ -29,19 +29,6 @@ where
         Box::pin(async move {
             // Logic specific to derived middleware would go here
             service.call(req).await
-        })
-    }
-}
-
-// Define a trait for middleware transformation to reuse
-pub trait MiddlewareTransform: Sized {
-    fn new_transform<T, B>(service: T) -> Ready<Result<BaseMiddleware<T>, ()>>
-    where
-        T: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
-        B: 'static,
-    {
-        ok(BaseMiddleware {
-            service: Rc::new(service),
         })
     }
 }

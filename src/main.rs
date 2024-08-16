@@ -1,11 +1,11 @@
 mod db;
+mod utils;
+mod types;
+mod routes;
 mod entities;
 mod handlers;
 mod middleware;
-mod routes;
 mod establish_connection;
-mod utils;
-mod types;
 
 use actix_web::{App, HttpServer, web};
 use handlers::health_handler::health_check;
@@ -16,7 +16,6 @@ async fn main() -> std::io::Result<()> {
     env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
 
     let db = establish_connection::establish_connection().await;
-
     let db_data = web::Data::new(db);
 
     HttpServer::new(move || {
