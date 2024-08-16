@@ -1,35 +1,16 @@
-use validator_derive::Validate;
 use sea_orm::DatabaseConnection;
-use serde::{Deserialize, Serialize};
 use actix_web::{web, HttpResponse, Error};
-use crate::utils::hash::Hash;
+use crate::types::incoming_requests::RegisterRequest;
+use crate::types::outgoing_responses::AuthResponse;
 use crate::types::types::CredentialsData;
 use crate::db::read::credentials::{does_email_exist, does_username_exist};
 use crate::db::write::{login_history::add_login_history, credentials::add_credentials_record};
-use crate::utils::sign_jwt::sign_jwt;
-
-#[derive(Debug, Deserialize, Validate)]
-pub struct RegisterRequest {
-    #[validate(email(message = "Invalid email format"))]
-    pub email: String,
-
-    #[validate(length(min = 3, max = 100, message = "Username must be between 3 and 100 characters"))]
-    pub username: String,
-
-    #[validate(length(min = 6, max = 100, message = "Password must be between 6 and 100 characters"))]
-    pub password: String,
-}
-
-#[derive(Serialize)]
-struct RegisterResponse {
-    pub access_token: String,
-}
+use crate::utils::auth_helpers::{hash::Hash, sign_jwt::sign_jwt};
 
 pub async fn register(
     db: web::Data<DatabaseConnection>, // Inject the DatabaseConnection
     req: web::Json<RegisterRequest>
 ) -> Result<HttpResponse, Error> {
-    // Check if the email already exists
     if does_email_exist(&db, &req.email).await? {
         return Ok(HttpResponse::BadRequest().json(serde_json::json!({
             "message": "Email already exists"
@@ -52,12 +33,13 @@ pub async fn register(
     };
 
     let user_id = add_credentials_record(&db, credentials_data).await?;
-    add_login_history(&db, user_id).await?;
-
+    
     // Generate the access token and public key (these would typically be dynamically generated)
     let access_token = sign_jwt(&user_id).await?;
 
-    let response = RegisterResponse {
+    add_login_history(&db, user_id).await?;
+
+    let response = AuthResponse {
         access_token
     };
 

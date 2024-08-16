@@ -1,2 +1,1 @@
-pub mod hash;
-pub mod sign_jwt;
+pub mod auth_helpers;
