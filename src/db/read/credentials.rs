@@ -33,12 +33,14 @@ pub async fn find_user_by_contact(
     let user = match contact_type {
         EmailOrUsername::Email => {
             credentials::Entity::find()
+            // TODO: Make this ilike
                 .filter(credentials::Column::Email.like(contact))
                 .one(db)
                 .await?
         }
         EmailOrUsername::Username => {
             credentials::Entity::find()
+            // TODO: Make this ilike
                 .filter(credentials::Column::Username.like(contact))
                 .one(db)
                 .await?

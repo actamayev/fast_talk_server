@@ -1,13 +1,13 @@
+use std::rc::Rc;
+use actix_http::h1;
+use serde_json::json;
+use validator::Validate;
+use actix_web::web::Bytes;
+use futures::future::{ok, LocalBoxFuture, Ready};
 use actix_web::{
     dev::{Service, ServiceRequest, ServiceResponse, Payload, Transform},
     Error, HttpResponse, web, body::BoxBody,
 };
-use futures::future::{ok, LocalBoxFuture, Ready};
-use std::rc::Rc;
-use validator::Validate;
-use serde_json::json;
-use actix_web::web::Bytes;
-use actix_http::h1;
 
 use crate::types::incoming_requests::LoginRequest;
 
