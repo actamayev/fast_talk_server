@@ -1,7 +1,12 @@
-//src/handlers/register
-use actix_web::{web, HttpResponse, Error};
-use serde::{Deserialize, Serialize};
 use validator_derive::Validate;
+use sea_orm::DatabaseConnection;
+use serde::{Deserialize, Serialize};
+use actix_web::{web, HttpResponse, Error};
+use crate::utils::hash::Hash;
+use crate::types::types::CredentialsData;
+use crate::db::read::credentials::{does_email_exist, does_username_exist};
+use crate::db::write::{login_history::add_login_history, credentials::add_credentials_record};
+use crate::utils::sign_jwt::sign_jwt;
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct RegisterRequest {
@@ -18,16 +23,42 @@ pub struct RegisterRequest {
 #[derive(Serialize)]
 struct RegisterResponse {
     pub access_token: String,
-    pub public_key: String,
 }
 
-pub async fn register(_req: web::Json<RegisterRequest>) -> Result<HttpResponse, Error> {
-    let access_token = "some_generated_jwt".to_string();
-    let public_key = "some_public_key".to_string();
+pub async fn register(
+    db: web::Data<DatabaseConnection>, // Inject the DatabaseConnection
+    req: web::Json<RegisterRequest>
+) -> Result<HttpResponse, Error> {
+    // Check if the email already exists
+    if does_email_exist(&db, &req.email).await? {
+        return Ok(HttpResponse::BadRequest().json(serde_json::json!({
+            "message": "Email already exists"
+        })));
+    }
+
+    if does_username_exist(&db, &req.username).await? {
+        return Ok(HttpResponse::BadRequest().json(serde_json::json!({
+            "message": "Username already exists"
+        })));
+    }
+
+    let hashed_password = Hash::hash_credentials(&req.password)
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let credentials_data = CredentialsData {
+        username: req.username.clone(),     // Cloning is necessary here if you need to use req.username later
+        hashed_password,                    // No need to clone; already owned
+        email: req.email.clone(),           // Cloning is necessary here if you need to use req.email later
+    };
+
+    let user_id = add_credentials_record(&db, credentials_data).await?;
+    add_login_history(&db, user_id).await?;
+
+    // Generate the access token and public key (these would typically be dynamically generated)
+    let access_token = sign_jwt(&user_id).await?;
 
     let response = RegisterResponse {
-        access_token,
-        public_key,
+        access_token
     };
 
     Ok(HttpResponse::Ok().json(response))

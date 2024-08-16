@@ -7,6 +7,7 @@ pub struct Model {
     pub user_id: i32,
     pub username: String,
     pub password: String,
+    pub email: String,
     pub is_active: bool,
     pub created_at: DateTimeWithTimeZone,
 }
