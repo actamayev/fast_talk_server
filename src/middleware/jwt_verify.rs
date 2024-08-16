@@ -9,7 +9,7 @@ use std::rc::Rc;
 use std::task::{Context, Poll};
 use sea_orm::DatabaseConnection;
 
-use crate::db::read::credentials::find_user_by_id;
+use crate::{db::read::credentials::find_user_by_id, types::globals::AuthenticatedUser};
 use crate::utils::auth_helpers::jwt::decode_jwt;
 
 pub struct JwtVerify {
@@ -75,10 +75,9 @@ where
                     })?;                    
 
                     // Find the user by ID
-                    let user = find_user_by_id(&db, user_id).await?;
-
-                    // Attach the user to the request's extensions for future access
-                    req.extensions_mut().insert(user);
+                    let user = find_user_by_id(&db, user_id).await?.expect("User not found");
+                    
+                    req.extensions_mut().insert(AuthenticatedUser(user));
 
                     // Proceed to the next service if the header is valid
                     return service.call(req).await;

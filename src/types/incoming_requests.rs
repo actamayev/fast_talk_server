@@ -23,13 +23,3 @@ pub struct LoginRequest {
     #[validate(length(min = 6, max = 100, message = "Password must be between 6 and 100 characters"))]
     pub password: String,
 }
-
-#[derive(Debug, Deserialize, Validate, Serialize)] // Derive Serialize
-#[serde(deny_unknown_fields)]  // This attribute will deny any unknown fields in the JSON
-pub struct CreateChat {
-    #[validate(length(min = 3, max = 100, message = "Contact must be between 3 and 100 characters"))]
-    pub contact: String,
-
-    #[validate(length(min = 6, max = 100, message = "Password must be between 6 and 100 characters"))]
-    pub password: String,
-}

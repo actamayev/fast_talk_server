@@ -5,7 +5,7 @@ use std::env;
 use dotenvy::dotenv;
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Claims {
+pub struct Claims {
     pub sub: String,
     exp: usize,
 }

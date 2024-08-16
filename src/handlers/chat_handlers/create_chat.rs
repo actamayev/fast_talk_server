@@ -1,41 +1,34 @@
-use actix_web::{web, HttpResponse, Error};
+use actix_web::{web, Error, HttpRequest, HttpMessage, HttpResponse};
 use sea_orm::DatabaseConnection;
-use crate::types::incoming_requests::CreateChat;
-use crate::types::outgoing_responses::CreateChatResponse;
-use crate::utils::auth_helpers::{hash::Hash, jwt::sign_jwt};
-use crate::db::{read::credentials::find_user_by_contact, write::login_history::add_login_history};
+use crate::types::globals::{AuthenticatedUser, FriendUser}; // Assuming User is the type of your user model
+use serde_json::json;
 
 pub async fn create_chat(
-    db: web::Data<DatabaseConnection>,
-    req: web::Json<CreateChat>
+    _db: web::Data<DatabaseConnection>,
+    req: HttpRequest,                // Access the HttpRequest to get the user
 ) -> Result<HttpResponse, Error> {
-    let user = find_user_by_contact(&db, &req.contact).await?;
+    if let Some(AuthenticatedUser(user)) = req.extensions().get::<AuthenticatedUser>() {
+        if let Some(FriendUser(friend)) = req.extensions().get::<FriendUser>() {
+            // Now you have access to the user and friend_id
+            println!("User ID: {}, Friend ID: {}", user.user_id, friend.user_id);
 
-    let user = match user {
-        Some(user) => user,
-        None => {
-            return Ok(HttpResponse::Unauthorized().json(serde_json::json!({
-                "message": "Invalid credentials"
-            })));
+            // Proceed with your logic, e.g., create a chat between the user and friend_id
+            // Example:
+            // let chat_id = create_chat_in_db(&db, user.user_id, friend_id.into_inner(), body.into_inner()).await?;
+
+            Ok(HttpResponse::Ok().json(json!({
+                "message": "Chat created",
+                "user_id": user.user_id,
+                "friend_id": friend.user_id,
+                // "chat_id": chat_id, // If you return a chat ID
+            })))
         }
-    };
-
-    let do_passwords_match = Hash::check_password(&req.password, &user.password)
-        .map_err(actix_web::error::ErrorInternalServerError)?;
-
-    if !do_passwords_match {
-        return Ok(HttpResponse::BadRequest().json(serde_json::json!({
-            "message": "Wrong password"
-        })));
+        else {
+            // Handle the case where the user is not found (shouldn't happen if middleware works correctly)
+            Ok(HttpResponse::Unauthorized().json(json!({"message": "friend not found"})))
+        }
+    } else {
+        // Handle the case where the user is not found (shouldn't happen if middleware works correctly)
+        Ok(HttpResponse::Unauthorized().json(json!({"message": "User not found"})))
     }
-
-    let access_token = sign_jwt(&user.user_id)?;
-
-    add_login_history(&db, user.user_id).await?;
-
-    let response = CreateChatResponse {
-        access_token
-    };
-
-    Ok(HttpResponse::Ok().json(response))
 }
