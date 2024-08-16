@@ -1,12 +1,13 @@
 use actix_web::{web, HttpResponse, Error};
 use sea_orm::DatabaseConnection;
+use crate::types::incoming_requests::CreateChat;
+use crate::types::outgoing_responses::CreateChatResponse;
 use crate::utils::auth_helpers::{hash::Hash, jwt::sign_jwt};
-use crate::types::{incoming_requests::LoginRequest, outgoing_responses::AuthResponse};
 use crate::db::{read::credentials::find_user_by_contact, write::login_history::add_login_history};
 
-pub async fn login(
+pub async fn create_chat(
     db: web::Data<DatabaseConnection>,
-    req: web::Json<LoginRequest>
+    req: web::Json<CreateChat>
 ) -> Result<HttpResponse, Error> {
     let user = find_user_by_contact(&db, &req.contact).await?;
 
@@ -32,7 +33,7 @@ pub async fn login(
 
     add_login_history(&db, user.user_id).await?;
 
-    let response = AuthResponse {
+    let response = CreateChatResponse {
         access_token
     };
 
