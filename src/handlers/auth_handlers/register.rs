@@ -8,7 +8,7 @@ use crate::db::write::{login_history::add_login_history, credentials::add_creden
 use crate::utils::auth_helpers::{hash::Hash, sign_jwt::sign_jwt};
 
 pub async fn register(
-    db: web::Data<DatabaseConnection>, // Inject the DatabaseConnection
+    db: web::Data<DatabaseConnection>,
     req: web::Json<RegisterRequest>
 ) -> Result<HttpResponse, Error> {
     if does_email_exist(&db, &req.email).await? {

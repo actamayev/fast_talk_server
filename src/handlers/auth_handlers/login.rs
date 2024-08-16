@@ -1,4 +1,3 @@
-//src/handlers/login
 use actix_web::{web, HttpResponse, Error};
 use sea_orm::DatabaseConnection;
 use crate::utils::auth_helpers::{hash::Hash, sign_jwt::sign_jwt};
@@ -6,7 +5,7 @@ use crate::types::{incoming_requests::LoginRequest, outgoing_responses::AuthResp
 use crate::db::{read::credentials::find_user_by_contact, write::login_history::add_login_history};
 
 pub async fn login(
-    db: web::Data<DatabaseConnection>, // Inject the DatabaseConnection
+    db: web::Data<DatabaseConnection>,
     req: web::Json<LoginRequest>
 ) -> Result<HttpResponse, Error> {
     let user = find_user_by_contact(&db, &req.contact).await?;
