@@ -2,7 +2,7 @@ use sea_orm::DatabaseConnection;
 use actix_web::{web, HttpResponse, Error};
 use crate::types::incoming_requests::RegisterRequest;
 use crate::types::outgoing_responses::AuthResponse;
-use crate::types::types::CredentialsData;
+use crate::types::globals::CredentialsData;
 use crate::db::read::credentials::{does_email_exist, does_username_exist};
 use crate::db::write::{login_history::add_login_history, credentials::add_credentials_record};
 use crate::utils::auth_helpers::{hash::Hash, sign_jwt::sign_jwt};
@@ -24,7 +24,7 @@ pub async fn register(
     }
 
     let hashed_password = Hash::hash_credentials(&req.password)
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let credentials_data = CredentialsData {
         username: req.username.clone(),     // Cloning is necessary here if you need to use req.username later

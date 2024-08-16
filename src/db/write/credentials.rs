@@ -1,6 +1,6 @@
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use std::error::Error;
-use crate::{entities::credentials, types::types::CredentialsData};
+use crate::{entities::credentials, types::globals::CredentialsData};
 
 pub async fn add_credentials_record(db: &DatabaseConnection, credentials_data: CredentialsData) -> Result<i32, Box<dyn Error>> {
     // Create a new ActiveModel instance for the credentials table
@@ -17,4 +17,3 @@ pub async fn add_credentials_record(db: &DatabaseConnection, credentials_data: C
     // Return the user ID (primary key)
     Ok(insert_result.user_id)
 }
-

@@ -1,7 +1,7 @@
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use std::error::Error;
 use crate::entities::credentials;
-use crate::types::types::EmailOrUsername;
+use crate::types::globals::EmailOrUsername;
 use crate::utils::auth_helpers::determine_contact_type::determine_login_contact_type;
 
 pub async fn does_email_exist(db: &DatabaseConnection, email: &str) -> Result<bool, Box<dyn Error>> {
