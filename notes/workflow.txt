@@ -1,0 +1,2 @@
+Before pushing, run ./cargo-validate.sh
+- If you have an error, make sure to run `chmod +x cargo-validate.sh`, to make the cargo validation an executable

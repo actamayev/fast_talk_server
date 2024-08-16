@@ -1,2 +1,2 @@
 // src/routes/mod.rs
-pub mod auth;
+pub mod auth_routes;

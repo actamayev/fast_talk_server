@@ -1,0 +1,4 @@
+To create a migration, 
+1. Run: `sea-orm-cli migrate generate name_of_migration`
+2. Edit the migration file
+3. Run `sea-orm-cli migrate up`
