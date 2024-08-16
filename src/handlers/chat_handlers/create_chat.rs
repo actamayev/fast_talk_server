@@ -1,34 +1,43 @@
-use actix_web::{web, Error, HttpRequest, HttpMessage, HttpResponse};
-use sea_orm::DatabaseConnection;
-use crate::types::globals::{AuthenticatedUser, FriendUser}; // Assuming User is the type of your user model
 use serde_json::json;
+use sea_orm::DatabaseConnection;
+use actix_web::{web, Error, HttpRequest, HttpMessage, HttpResponse};
+use crate::db::write::{chat_participants::add_chat_participants_record, chats::add_chats_record};
+use crate::types::{globals::{AuthenticatedUser, FriendUser}, outgoing_responses::CreateChatResponse}; 
 
 pub async fn create_chat(
-    _db: web::Data<DatabaseConnection>,
-    req: HttpRequest,                // Access the HttpRequest to get the user
+    db: web::Data<DatabaseConnection>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
-    if let Some(AuthenticatedUser(user)) = req.extensions().get::<AuthenticatedUser>() {
-        if let Some(FriendUser(friend)) = req.extensions().get::<FriendUser>() {
-            // Now you have access to the user and friend_id
-            println!("User ID: {}, Friend ID: {}", user.user_id, friend.user_id);
-
-            // Proceed with your logic, e.g., create a chat between the user and friend_id
-            // Example:
-            // let chat_id = create_chat_in_db(&db, user.user_id, friend_id.into_inner(), body.into_inner()).await?;
-
-            Ok(HttpResponse::Ok().json(json!({
-                "message": "Chat created",
-                "user_id": user.user_id,
-                "friend_id": friend.user_id,
-                // "chat_id": chat_id, // If you return a chat ID
-            })))
+    // Extract the authenticated user from the request extensions
+    let user = match req.extensions().get::<AuthenticatedUser>().cloned() {
+        Some(AuthenticatedUser(user)) => user,
+        None => {
+            return Ok(HttpResponse::Unauthorized().json(json!({"message": "User not found"})));
         }
-        else {
-            // Handle the case where the user is not found (shouldn't happen if middleware works correctly)
-            Ok(HttpResponse::Unauthorized().json(json!({"message": "friend not found"})))
+    };
+
+    // Extract the friend user from the request extensions
+    let friend = match req.extensions().get::<FriendUser>().cloned() {
+        Some(FriendUser(friend)) => friend,
+        None => {
+            return Ok(HttpResponse::Unauthorized().json(json!({"message": "Friend not found"})));
         }
-    } else {
-        // Handle the case where the user is not found (shouldn't happen if middleware works correctly)
-        Ok(HttpResponse::Unauthorized().json(json!({"message": "User not found"})))
+    };
+
+    // Create a new chat record
+    let chat_id = match add_chats_record(&db).await {
+        Ok(id) => id,
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({"message": "Failed to create chat", "error": e.to_string()})));
+        }
+    };
+
+    // Add chat participants
+    if let Err(e) = add_chat_participants_record(&db, user.user_id, friend.user_id, chat_id).await {
+        return Ok(HttpResponse::InternalServerError().json(json!({"message": "Failed to add chat participants", "error": e.to_string()})));
     }
+
+    // Return success response
+    let response = CreateChatResponse { chat_id };
+    Ok(HttpResponse::Ok().json(response))
 }
