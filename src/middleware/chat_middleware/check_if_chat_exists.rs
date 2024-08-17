@@ -82,7 +82,7 @@ where
 					return service.call(req).await;
 				}
 			}
-	
+
 			// If there's an error is missing or not a valid number, return an error response
 			let response = HttpResponse::BadRequest()
 				.json(json!({"message": "Unable to check if chat already exists"}))
