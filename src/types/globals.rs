@@ -12,9 +12,9 @@ pub enum EmailOrUsername {
 }
 
 // Define a wrapper struct for the authenticated user
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AuthenticatedUser(pub User); // User is your user model type
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 // Define a wrapper struct for the friend user
 pub struct FriendUser(pub User);

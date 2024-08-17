@@ -13,7 +13,7 @@ use crate::{db::read::credentials::find_user_by_id, types::globals::Authenticate
 use crate::utils::auth_helpers::jwt::decode_jwt;
 
 pub struct JwtVerify {
-    db: Data<DatabaseConnection>,
+    db: Data<DatabaseConnection>
 }
 
 impl JwtVerify {
@@ -76,7 +76,7 @@ where
 
                     // Find the user by ID
                     let user = find_user_by_id(&db, user_id).await?.expect("User not found");
-                    
+
                     req.extensions_mut().insert(AuthenticatedUser(user));
 
                     // Proceed to the next service if the header is valid

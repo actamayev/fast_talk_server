@@ -8,7 +8,8 @@ use serde_json::json;
 use std::rc::Rc;
 use std::task::{Context, Poll};
 
-use crate::{db::read::credentials::find_user_by_id, types::globals::FriendUser};
+use crate::db::read::credentials::find_user_by_id;
+use crate::types::globals::FriendUser;
 
 pub struct ValidateFriendId {
     db: Data<DatabaseConnection>

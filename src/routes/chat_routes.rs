@@ -1,9 +1,10 @@
 use actix_web::web;
 use sea_orm::DatabaseConnection;
-use crate::middleware::chat_middleware::check_if_chat_exists::CheckIfChatExists;
 use crate::middleware::jwt_verify::JwtVerify;
-use crate::handlers::chat_handlers::create_chat::create_chat;
 use crate::middleware::chat_middleware::validate_friend_id::ValidateFriendId;
+use crate::middleware::chat_middleware::check_if_chat_exists::CheckIfChatExists;
+
+use crate::handlers::chat_handlers::create_chat::create_chat;
 
 pub fn chat_routes(cfg: &mut web::ServiceConfig, db: web::Data<DatabaseConnection>) {
     let jwt_verify = JwtVerify::new(db.clone());

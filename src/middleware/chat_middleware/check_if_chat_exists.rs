@@ -8,7 +8,8 @@ use actix_web::{
 };
 use futures::future::{ok, LocalBoxFuture, Ready};
 
-use crate::{db::read::chat_participants::does_existing_chat_exist, types::globals::{AuthenticatedUser, FriendUser}};
+use crate::db::read::chat_participants::does_existing_chat_exist;
+use crate::types::globals::{AuthenticatedUser, FriendUser};
 
 pub struct CheckIfChatExists {
     db: Data<DatabaseConnection>
@@ -58,10 +59,10 @@ where
 	fn call(&self, req: ServiceRequest) -> Self::Future {
 		let service = Rc::clone(&self.service);
 		let db = self.db.clone();
-	
+
 		Box::pin(async move {
 			// Extract the necessary extensions before proceeding
-			let user = req.extensions().get::<AuthenticatedUser>().cloned();
+			let user: Option<AuthenticatedUser> = req.extensions().get::<AuthenticatedUser>().cloned();
 			let friend = req.extensions().get::<FriendUser>().cloned();
 	
 			// Handle the case where the extensions are found
@@ -82,9 +83,9 @@ where
 				}
 			}
 	
-			// If friendId is missing or not a valid number, return an error response
+			// If there's an error is missing or not a valid number, return an error response
 			let response = HttpResponse::BadRequest()
-				.json(json!({"message": "Invalid or missing friendId in URL parameters"}))
+				.json(json!({"message": "Unable to check if chat already exists"}))
 				.map_into_boxed_body();
 			Ok(ServiceResponse::new(req.into_parts().0, response))
 		})
