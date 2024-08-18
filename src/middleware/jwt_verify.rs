@@ -12,6 +12,7 @@ use sea_orm::DatabaseConnection;
 use crate::{db::read::credentials::find_user_by_id, types::globals::AuthenticatedUser};
 use crate::utils::auth_helpers::jwt::decode_jwt;
 
+#[derive(Clone)] // Add this line
 pub struct JwtVerify {
     db: Data<DatabaseConnection>
 }
