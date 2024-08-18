@@ -47,3 +47,19 @@ pub async fn is_user_in_chat(
 
     Ok(participant_exists)
 }
+
+pub async fn get_user_chat_ids(
+    db: &DatabaseConnection,
+    user_id: i32,
+) -> Result<Vec<i32>, DbErr> {
+    // Query the chat participants table for all chat_id's associated with the user_id
+    let chat_ids = chat_participants::Entity::find()
+        .filter(chat_participants::Column::UserId.eq(user_id))
+        .select_only()
+        .column(chat_participants::Column::ChatId)
+        .into_tuple::<i32>()
+        .all(db)
+        .await?;
+
+    Ok(chat_ids) // Return the vector of chat_id's
+}

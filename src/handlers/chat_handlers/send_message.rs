@@ -9,7 +9,7 @@ use crate::db::write::chats::update_chat_last_message;
 use crate::types::incoming_requests::NewMessageRequest;
 use crate::types::outgoing_responses::SendMessageResponse;
 
-pub async fn send_private_chat_message(
+pub async fn send_message(
     db: web::Data<DatabaseConnection>,
     req: HttpRequest,  // Use HttpRequest to access extensions
     path: web::Path<i32>, // Extract friendId from the path
