@@ -1,6 +1,7 @@
 use serde_json::json;
 use sea_orm::DatabaseConnection;
 use actix_web::{web, Error, HttpRequest, HttpMessage, HttpResponse};
+use crate::db::read::chat_participants::is_user_in_chat;
 use crate::db::read::chats::does_chat_exist;
 use crate::types::globals::AuthenticatedUser;
 use crate::db::write::messages::add_messages_record;
@@ -27,6 +28,12 @@ pub async fn send_private_chat_message(
     match does_chat_exist(&db, chat_id).await {
         Ok(false) => return Ok(HttpResponse::Conflict().json(json!({"message": "Chat does not exist"}))),
         Err(e) => return Ok(HttpResponse::InternalServerError().json(json!({"message": "Failed to check if chat exists", "error": e.to_string()}))),
+        Ok(true) => {} // Proceed if the chat exists
+    }
+
+    match is_user_in_chat(&db, user.user_id, chat_id).await {
+        Ok(false) => return Ok(HttpResponse::Conflict().json(json!({"message": "User is not in chat"}))),
+        Err(e) => return Ok(HttpResponse::InternalServerError().json(json!({"message": "Failed to check if user is in chat", "error": e.to_string()}))),
         Ok(true) => {} // Proceed if the chat exists
     }
 

@@ -31,3 +31,19 @@ pub async fn does_existing_chat_exist(
 
     Ok(common_chat_exists)
 }
+
+pub async fn is_user_in_chat(
+    db: &DatabaseConnection,
+    user_id: i32,
+    chat_id: i32,
+) -> Result<bool, DbErr> {
+    // Query the chat participants table for a record that matches both user_id and chat_id
+    let participant_exists = chat_participants::Entity::find()
+        .filter(chat_participants::Column::UserId.eq(user_id))
+        .filter(chat_participants::Column::ChatId.eq(chat_id))
+        .one(db)
+        .await?
+        .is_some(); // Check if a matching record exists
+
+    Ok(participant_exists)
+}
