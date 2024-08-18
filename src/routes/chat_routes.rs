@@ -23,9 +23,8 @@ pub fn chat_routes(cfg: &mut web::ServiceConfig, db: web::Data<DatabaseConnectio
                     .route(web::post().to(send_message))
             )
             .service(
-                web::resource("/retrieve-chats-list/{chatId}") // Use friendId as a path parameter
-                    .wrap(ValidateNewMessage)
-                    .route(web::post().to(retrieve_chats_list))
+                web::resource("/retrieve-chats-list") // Use friendId as a path parameter
+                    .route(web::get().to(retrieve_chats_list))
             )
     );
 }

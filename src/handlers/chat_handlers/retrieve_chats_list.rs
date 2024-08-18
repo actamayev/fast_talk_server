@@ -19,31 +19,47 @@ pub async fn retrieve_chats_list(
         }
     };
 
-    let chat_ids = get_user_chat_ids(&db, user.user_id).await.map_err(|e| {
-        actix_web::error::InternalError::from_response(e, HttpResponse::InternalServerError().finish()).into()
-    })?;
+	let chat_ids = get_user_chat_ids(&db, user.user_id).await.map_err(|e| {
+		let error_message = format!("Failed to retrieve chat IDs for user with ID {}: {}", user.user_id, e);
+		let error: actix_web::Error = actix_web::error::InternalError::from_response(
+			error_message.clone(),
+			HttpResponse::InternalServerError().body(error_message)
+		).into();
+		error
+	})?;
+	
+	let chat_info = get_chats_info(&db, &chat_ids).await.map_err(|e| {
+		let error_message = format!("Failed to retrieve chat information for chat IDs {:?}: {}", chat_ids, e);
+		let error: actix_web::Error = actix_web::error::InternalError::from_response(
+			error_message.clone(),
+			HttpResponse::InternalServerError().body(error_message)
+		).into();
+		error
+	})?;
+	
+	let chat_usernames = get_chat_usernames(&db, &chat_ids, user.user_id).await.map_err(|e| {
+		let error_message = format!("Failed to retrieve chat usernames for user ID {} and chat IDs {:?}: {}", user.user_id, chat_ids, e);
+		let error: actix_web::Error = actix_web::error::InternalError::from_response(
+			error_message.clone(),
+			HttpResponse::InternalServerError().body(error_message)
+		).into();
+		error
+	})?;
 
-    // Get the chat info for these chat IDs
-	let chat_info = get_chats_info(&db, chat_ids).await.map_err(|e| {
-		actix_web::error::InternalError::from_response(e, HttpResponse::InternalServerError().finish()).into()
-	})?;	
-
-	let chat_usernames = get_chat_usernames(&db, chat_ids, user.user_id).await.map_err(|e| {
-    	actix_web::error::InternalError::from_response(e, HttpResponse::InternalServerError().finish()).into()
-	});
-
+	// Calculate the combined chats
 	let combined_chats: Vec<SingleRetrievedChat> = chat_info.into_iter()
-    .filter_map(|chat| {
-        chat_usernames.iter().find(|u| u.chat_id == chat.chat_id).map(|user_info| {
-            SingleRetrievedChat {
-                chat_id: chat.chat_id,
-                friend_username: user_info.username.clone(),
-                last_message: chat.last_message.clone().unwrap_or_else(|| "".to_string()),
-                last_message_time: chat.updated_at,
-            }
-        })
-    })
-    .collect();
+		.filter_map(|chat| {
+			chat_usernames.iter().find(|user_info| user_info.chat_id == chat.chat_id).map(|user_info| {
+				SingleRetrievedChat {
+					chat_id: chat.chat_id,
+					friend_username: user_info.username.clone(),
+					last_message: chat.last_message.clone().unwrap_or_default(),
+					last_message_time: chat.updated_at,
+					chat_created_at: chat.created_at
+				}
+			})
+		})
+		.collect();
 
     Ok(HttpResponse::Ok().json(combined_chats))
 }

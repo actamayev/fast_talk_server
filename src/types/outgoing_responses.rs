@@ -22,4 +22,5 @@ pub struct SingleRetrievedChat {
     pub friend_username: String,
     pub last_message: String,
     pub last_message_time: NaiveDateTime,
+    pub chat_created_at: NaiveDateTime
 }

@@ -10,12 +10,14 @@ pub struct ChatUserInfo {
 
 pub async fn get_chat_usernames(
     db: &DatabaseConnection,
-    chat_ids: Vec<i32>,
+    chat_ids: &[i32],  // Accept a slice reference instead of a Vec
     user_id: i32,
 ) -> Result<Vec<ChatUserInfo>, Box<dyn Error>> {
+    let chat_ids_vec = chat_ids.to_vec();
+
     // Step 1: Get the chat participants excluding the current user
     let chat_participants = chat_participants::Entity::find()
-        .filter(chat_participants::Column::ChatId.is_in(chat_ids))
+        .filter(chat_participants::Column::ChatId.is_in(chat_ids_vec))
         .filter(chat_participants::Column::UserId.ne(user_id)) // Exclude the current user's ID
         .select_only()
         .column(chat_participants::Column::ChatId)
