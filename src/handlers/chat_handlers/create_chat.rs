@@ -36,15 +36,16 @@ pub async fn create_chat(
     };
 
     // Check if a chat already exists between the user and the friend
-    let chat_exists = match does_existing_chat_exist(&db, user.user_id, friend.user_id).await {
-        Ok(exists) => exists,
+    let chat_exists_result = does_existing_chat_exist(&db, user.user_id, friend.user_id).await;
+
+    match chat_exists_result {
+        Ok(true) => {
+            return Ok(HttpResponse::Conflict().json(json!({"message": "Chat already exists"})));
+        }
+        Ok(false) => { }
         Err(e) => {
             return Ok(HttpResponse::InternalServerError().json(json!({"message": "Failed to check if chat exists", "error": e.to_string()})));
         }
-    };
-
-    if chat_exists {
-        return Ok(HttpResponse::Conflict().json(json!({"message": "Chat already exists"})));
     }
 
     // Create a new chat record
