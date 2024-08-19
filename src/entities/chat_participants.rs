@@ -45,4 +45,4 @@ impl Related<super::credentials::Entity> for Entity {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-// TODO: Add a Unique index to the entity (between chatId and userId)
+// FUTURE TODO: Add a Unique index to the entity (between chatId and userId)

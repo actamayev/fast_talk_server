@@ -1,3 +1,4 @@
+use sea_orm::prelude::Expr;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use std::error::Error;
 use crate::entities::credentials;
@@ -6,8 +7,7 @@ use crate::utils::auth_helpers::determine_contact_type::determine_login_contact_
 
 pub async fn does_email_exist(db: &DatabaseConnection, email: &str) -> Result<bool, Box<dyn Error>> {
     let user = credentials::Entity::find()
-    // TODO: Change this to ilike for case-insentisitve searches
-        .filter(credentials::Column::Email.like(email)) 
+        .filter(Expr::col(credentials::Column::Email).eq(Expr::val(email.to_lowercase()))) 
         .one(db)
         .await?;
 
@@ -16,8 +16,7 @@ pub async fn does_email_exist(db: &DatabaseConnection, email: &str) -> Result<bo
 
 pub async fn does_username_exist(db: &DatabaseConnection, username: &str) -> Result<bool, Box<dyn Error>> {
     let user = credentials::Entity::find()
-    // TODO: Change this to ilike for case-insentisitve searches
-        .filter(credentials::Column::Username.like(username))
+        .filter(Expr::col(credentials::Column::Username).eq(Expr::val(username.to_lowercase()))) 
         .one(db)
         .await?;
 
@@ -33,15 +32,13 @@ pub async fn find_user_by_contact(
     let user = match contact_type {
         EmailOrUsername::Email => {
             credentials::Entity::find()
-            // TODO: Make this ilike
-                .filter(credentials::Column::Email.like(contact))
+                .filter(Expr::col(credentials::Column::Email).eq(Expr::val(contact.to_lowercase()))) 
                 .one(db)
                 .await?
         }
         EmailOrUsername::Username => {
             credentials::Entity::find()
-            // TODO: Make this ilike
-                .filter(credentials::Column::Username.like(contact))
+                .filter(Expr::col(credentials::Column::Username).eq(Expr::val(contact.to_lowercase()))) 
                 .one(db)
                 .await?
         }
