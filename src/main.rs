@@ -22,6 +22,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(db_data.clone()) // Clone the web::Data and pass it to the app
             .configure(routes::auth_routes::auth_routes) // Configure all auth routes
+            .configure(|cfg| routes::chat_routes::chat_routes(cfg, db_data.clone())) // Pass db_data to chat_routes
             .route("/health", web::get().to(health_check)) // Add the /health route directly
     })
     .bind("127.0.0.1:8080")?

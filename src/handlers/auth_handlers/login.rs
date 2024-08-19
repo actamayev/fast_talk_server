@@ -1,6 +1,6 @@
 use actix_web::{web, HttpResponse, Error};
 use sea_orm::DatabaseConnection;
-use crate::utils::auth_helpers::{hash::Hash, sign_jwt::sign_jwt};
+use crate::utils::auth_helpers::{hash::Hash, jwt::sign_jwt};
 use crate::types::{incoming_requests::LoginRequest, outgoing_responses::AuthResponse};
 use crate::db::{read::credentials::find_user_by_contact, write::login_history::add_login_history};
 
@@ -28,7 +28,7 @@ pub async fn login(
         })));
     }
 
-    let access_token = sign_jwt(&user.user_id).await?;
+    let access_token = sign_jwt(&user.user_id)?;
 
     add_login_history(&db, user.user_id).await?;
 
