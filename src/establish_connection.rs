@@ -1,6 +1,6 @@
-use sea_orm::Database;
 use std::env;
 use dotenvy::dotenv;
+use sea_orm::Database;
 
 pub async fn establish_connection() -> sea_orm::DatabaseConnection {
     dotenv().ok();

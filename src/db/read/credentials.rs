@@ -55,9 +55,9 @@ pub async fn find_user_by_id(
     user_id: i32,
 ) -> Result<Option<credentials::Model>, Box<dyn Error>> {
     let user = credentials::Entity::find()
-                .filter(credentials::Column::UserId.eq(user_id))
-                .one(db)
-                .await?;
+        .filter(credentials::Column::UserId.eq(user_id))
+        .one(db)
+        .await?;
 
     Ok(user)
 }
