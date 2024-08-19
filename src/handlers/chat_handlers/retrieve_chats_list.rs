@@ -5,7 +5,7 @@ use crate::db::read::chats::get_chats_info;
 use crate::types::globals::AuthenticatedUser;
 use crate::db::read::chat_participants::get_user_chat_ids;
 use crate::types::outgoing_responses::SingleRetrievedChat;
-use crate::db::read::retrieve_chat_usernames::get_chat_usernames;
+use crate::db::read::retrieve_chat_usernames::retrieve_chat_usernames;
 
 pub async fn retrieve_chats_list(
     db: web::Data<DatabaseConnection>,
@@ -37,7 +37,7 @@ pub async fn retrieve_chats_list(
 		error
 	})?;
 	
-	let chat_usernames = get_chat_usernames(&db, &chat_ids, user.user_id).await.map_err(|e| {
+	let chat_usernames = retrieve_chat_usernames(&db, &chat_ids, user.user_id).await.map_err(|e| {
 		let error_message = format!("Failed to retrieve chat usernames for user ID {} and chat IDs {:?}: {}", user.user_id, chat_ids, e);
 		let error: actix_web::Error = actix_web::error::InternalError::from_response(
 			error_message.clone(),

@@ -40,7 +40,7 @@ impl MigrationTrait for Migration {
                         ForeignKey::create()
                             .name("fk-chat_participants-user_id")
                             .from(ChatParticipants::Table, ChatParticipants::UserId)
-                            .to(Credentials::Table, Credentials::UserId), // Assuming 'Credentials' is the table for users
+                            .to(Credentials::Table, Credentials::UserId),
                     )
                     .to_owned(),
             )

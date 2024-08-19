@@ -1,14 +1,14 @@
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect};
 use std::error::Error;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect};
 use crate::entities::{chat_participants, credentials};
 
 #[derive(Debug)]
 pub struct ChatUserInfo {
     pub chat_id: i32,
-    pub username: String,
+    pub username: String
 }
 
-pub async fn get_chat_usernames(
+pub async fn retrieve_chat_usernames(
     db: &DatabaseConnection,
     chat_ids: &[i32],  // Accept a slice reference instead of a Vec
     user_id: i32,
