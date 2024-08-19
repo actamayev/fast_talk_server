@@ -14,7 +14,6 @@ mod handlers;
 mod middleware;
 mod establish_connection;
 
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Initialize logging

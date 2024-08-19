@@ -1,5 +1,5 @@
-use actix::{Actor, StreamHandler, Handler, Message as ActixMessage, Addr};
-use actix_web::{web, HttpRequest, Responder};
+use actix::prelude::*;
+use actix_web::{web, HttpRequest, HttpResponse, Error};
 use actix_web_actors::ws;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -8,31 +8,26 @@ use std::sync::{Arc, Mutex};
 pub type ClientMap = Arc<Mutex<HashMap<i32, Addr<MyWebSocket>>>>;
 
 // Define a WebSocket message that can be sent to the clients
-#[derive(ActixMessage)]
+#[derive(Message)]
 #[rtype(result = "()")]
 struct WsMessage(String);
 
 pub struct MyWebSocket {
-    user_id: i32,
-    clients: ClientMap,
+    pub user_id: i32,
+    pub clients: ClientMap,
 }
 
-// Implement the Actor trait for MyWebSocket
 impl Actor for MyWebSocket {
     type Context = ws::WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        // Register the client when the WebSocket connection starts
         let addr = ctx.address();
         let mut clients = self.clients.lock().unwrap();
         clients.insert(self.user_id, addr);
-
-        // Optionally, notify the client that it has connected
         ctx.text("You are connected");
     }
 
     fn stopped(&mut self, _: &mut Self::Context) {
-        // Unregister the client when the WebSocket connection stops
         let mut clients = self.clients.lock().unwrap();
         clients.remove(&self.user_id);
     }
@@ -41,10 +36,13 @@ impl Actor for MyWebSocket {
 // Handle incoming WebSocket messages
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
-        if let Ok(ws::Message::Text(text)) = msg {
-            // Here we could handle incoming messages if needed
-            // For now, we simply echo the message back
-            ctx.text(text);
+        match msg {
+            Ok(ws::Message::Text(text)) => {
+                // Here we could handle incoming messages if needed
+                // For now, we simply echo the message back
+                ctx.text(text);
+            }
+            _ => (),
         }
     }
 }
@@ -63,7 +61,7 @@ pub async fn ws_index(
     req: HttpRequest,
     stream: web::Payload,
     clients: web::Data<ClientMap>,
-) -> impl Responder {
+) -> Result<HttpResponse, Error> {
     // Extract user ID from request (assumed to be part of the query or headers)
     let user_id = extract_user_id(&req);
 
