@@ -39,10 +39,11 @@ pub async fn create_chat(
     let chat_exists_result = does_existing_chat_exist(&db, user.user_id, friend.user_id).await;
 
     match chat_exists_result {
-        Ok(true) => {
-            return Ok(HttpResponse::Conflict().json(json!({"message": "Chat already exists"})));
+        Ok(Some(chat_id)) => {
+            let response = CreateChatResponse { chat_id };
+            return Ok(HttpResponse::Ok().json(response))
         }
-        Ok(false) => { }
+        Ok(None) => { }
         Err(e) => {
             return Ok(HttpResponse::InternalServerError().json(json!({"message": "Failed to check if chat exists", "error": e.to_string()})));
         }

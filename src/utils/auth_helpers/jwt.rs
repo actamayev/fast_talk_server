@@ -1,8 +1,8 @@
-use jsonwebtoken::{encode, decode, Header, EncodingKey, DecodingKey, Validation, TokenData};
-use serde::{Serialize, Deserialize};
-use std::error::Error;
 use std::env;
 use dotenvy::dotenv;
+use std::error::Error;
+use serde::{Serialize, Deserialize};
+use jsonwebtoken::{encode, decode, Header, EncodingKey, DecodingKey, Validation, TokenData};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {

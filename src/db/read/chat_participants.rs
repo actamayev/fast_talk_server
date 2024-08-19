@@ -6,8 +6,8 @@ pub async fn does_existing_chat_exist(
     db: &DatabaseConnection,
     user_id1: i32,
     user_id2: i32,
-) -> Result<bool, DbErr> {
-    // Query for chats where user_id1 is a participant
+) -> Result<Option<i32>, DbErr> {
+    // Query for chat IDs where user_id1 is a participant
     let user1_chats = chat_participants::Entity::find()
         .filter(chat_participants::Column::UserId.eq(user_id1))
         .select_only()
@@ -16,7 +16,7 @@ pub async fn does_existing_chat_exist(
         .all(db)
         .await?;
 
-    // Query for chats where user_id2 is a participant
+    // Query for chat IDs where user_id2 is a participant
     let user2_chats = chat_participants::Entity::find()
         .filter(chat_participants::Column::UserId.eq(user_id2))
         .select_only()
@@ -25,10 +25,15 @@ pub async fn does_existing_chat_exist(
         .all(db)
         .await?;
 
-    // Check if there's a common chat_id between user1 and user2
-    let common_chat_exists = user1_chats.iter().any(|chat_id1| user2_chats.contains(chat_id1));
+    // Find the first common chat_id between user1 and user2
+    for chat_id1 in user1_chats {
+        if user2_chats.contains(&chat_id1) {
+            return Ok(Some(chat_id1)); // Return the common chat_id
+        }
+    }
 
-    Ok(common_chat_exists)
+    // If no common chat_id is found, return None
+    Ok(None)
 }
 
 pub async fn is_user_in_chat(
