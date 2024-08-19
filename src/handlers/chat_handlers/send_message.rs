@@ -1,11 +1,12 @@
 use serde_json::json;
 use sea_orm::DatabaseConnection;
+use crate::utils::socket::socket_setup::ClientMap;
 use actix_web::{web, Error, HttpRequest, HttpMessage, HttpResponse};
 use crate::db::read::chats::does_chat_exist;
 use crate::types::globals::AuthenticatedUser;
 use crate::types::incoming_requests::NewMessageRequest;
-use crate::db::read::chat_participants::is_user_in_chat;
 use crate::types::outgoing_responses::SendMessageResponse;
+use crate::db::read::chat_participants::{get_other_user_in_chat, is_user_in_chat};
 use crate::db::write::add_new_message_and_update_chat::add_message_and_update_chat;
 
 pub async fn send_message(
@@ -13,6 +14,7 @@ pub async fn send_message(
     req: HttpRequest,  // Use HttpRequest to access extensions
     path: web::Path<i32>, // Extract chatId from the path
     json: web::Json<NewMessageRequest>, // Extract and validate the incoming JSON
+    clients: web::Data<ClientMap>,
 ) -> Result<HttpResponse, Error> {
     let chat_id = path.into_inner();
 
@@ -37,6 +39,23 @@ pub async fn send_message(
     }
 
 	let message_id = add_message_and_update_chat(&db, chat_id, user.user_id, json.message.clone()).await?;
+
+    let other_user_id = get_other_user_in_chat(&db, chat_id, user.user_id).await;
+
+    match other_user_id {
+        Ok(None) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({"message": "Unable to find other user"})));
+        }
+        Ok(Some(user_id)) => { }
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({"message": "Failed to check if chat exists", "error": e.to_string()})));
+        }
+    }
+
+    let clients = clients.lock().unwrap();
+    if let Some(addr) = clients.get(&other_user_id) {
+        addr.do_send(WsMessage(json.message.clone())); // Send the message to the WebSocket
+    }
 
     // Return success response
     let response = SendMessageResponse { message_id };
