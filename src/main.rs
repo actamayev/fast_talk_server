@@ -1,4 +1,5 @@
 use env_logger::Env;
+use actix_cors::Cors;
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 use actix_web::{App, HttpServer, web};
@@ -28,7 +29,14 @@ async fn main() -> std::io::Result<()> {
 
     // Start the HTTP server
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin() // Allow requests from any origin, or use .allowed_origin("http://localhost:3000") for specific origin
+            .allow_any_method() // Allow any HTTP method
+            .allow_any_header() // Allow any header
+            .max_age(3600); // Cache the CORS response for 1 hour
+
         App::new()
+            .wrap(cors) // Apply the CORS middleware
             .app_data(db_data.clone()) // Pass the database connection to the app
             .app_data(web::Data::new(clients.clone())) // Pass the shared client map to the app
             .configure(routes::auth_routes::auth_routes) // Configure auth routes
