@@ -3,3 +3,4 @@
 -- select * from chats;
 -- select * from chat_participants;
 -- select * from messages;
+

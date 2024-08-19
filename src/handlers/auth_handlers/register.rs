@@ -1,3 +1,4 @@
+use std::time::Instant;
 use sea_orm::DatabaseConnection;
 use actix_web::{web, HttpResponse, Error};
 use crate::types::globals::CredentialsData;
@@ -11,11 +12,14 @@ pub async fn register(
     db: web::Data<DatabaseConnection>,
     req: web::Json<RegisterRequest>
 ) -> Result<HttpResponse, Error> {
+    // let start = Instant::now();
+
     if does_email_exist(&db, &req.email).await? {
         return Ok(HttpResponse::BadRequest().json(serde_json::json!({
             "message": "Email already exists"
         })));
     }
+    // println!("Time to does_email_exist: {:?}", user_lookup_duration);
 
     if does_username_exist(&db, &req.username).await? {
         return Ok(HttpResponse::BadRequest().json(serde_json::json!({
