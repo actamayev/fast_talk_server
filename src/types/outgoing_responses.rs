@@ -25,7 +25,7 @@ pub struct SingleRetrievedChat {
     pub chat_created_at: NaiveDateTime
 }
 
-#[derive(Debug, Serialize)]  // Derive Serialize here
+#[derive(Serialize)]
 pub struct ChatMessage {
     pub message_id: i32,
     pub did_user_send: bool,

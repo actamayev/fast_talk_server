@@ -15,7 +15,7 @@ pub struct RegisterRequest {
 }
 
 #[derive(Deserialize, Validate, Serialize)]
-#[serde(deny_unknown_fields)]  // This attribute will deny any unknown fields in the JSON
+#[serde(deny_unknown_fields)]
 pub struct LoginRequest {
     #[validate(length(min = 3, max = 100, message = "Contact must be between 3 and 100 characters"))]
     pub contact: String,
@@ -24,7 +24,7 @@ pub struct LoginRequest {
     pub password: String
 }
 
-#[derive(Deserialize, Validate, Serialize)] // Derive Serialize
+#[derive(Deserialize, Validate, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct NewMessageRequest {
     #[validate(length(min = 1, max = 1000, message = "Message must be at least 1 character, and no more than 1000 characters"))]

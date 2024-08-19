@@ -7,7 +7,7 @@ use jsonwebtoken::{encode, decode, Header, EncodingKey, DecodingKey, Validation,
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
-    exp: usize,
+    exp: usize
 }
 
 pub fn sign_jwt(user_id: &i32) -> Result<String, Box<dyn Error>> {
