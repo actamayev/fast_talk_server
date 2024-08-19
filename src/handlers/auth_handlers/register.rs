@@ -1,4 +1,3 @@
-use std::time::Instant;
 use sea_orm::DatabaseConnection;
 use actix_web::{web, HttpResponse, Error};
 use crate::types::globals::CredentialsData;
