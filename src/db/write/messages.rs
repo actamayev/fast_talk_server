@@ -1,6 +1,6 @@
+use std::error::Error;
 use chrono::{Utc, TimeZone, FixedOffset};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
-use std::error::Error;
 use crate::entities::messages;
 
 pub async fn add_messages_record(

@@ -2,8 +2,8 @@ use serde_json::json;
 use sea_orm::DatabaseConnection;
 use actix_web::{web, Error, HttpRequest, HttpMessage, HttpResponse};
 use crate::db::read::chats::does_chat_exist;
-use crate::db::read::messages::get_chat_messages;
 use crate::types::globals::AuthenticatedUser;
+use crate::db::read::messages::get_chat_messages;
 use crate::db::read::chat_participants::is_user_in_chat;
 
 pub async fn retrieve_chat_messages(

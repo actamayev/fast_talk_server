@@ -1,5 +1,5 @@
-use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use std::error::Error;
+use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use crate::entities::login_history;
 
 pub async fn add_login_history(db: &DatabaseConnection, user_id: i32) -> Result<(), Box<dyn Error>> {

@@ -1,9 +1,9 @@
 use serde_json::json;
 use sea_orm::DatabaseConnection;
 use actix_web::{web, Error, HttpRequest, HttpMessage, HttpResponse};
+use crate::types::{globals::AuthenticatedUser, outgoing_responses::CreateChatResponse};
 use crate::db::write::{chat_participants::add_chat_participants_record, chats::add_chats_record};
 use crate::db::read::{chat_participants::does_existing_chat_exist, credentials::find_user_by_id};
-use crate::types::{globals::AuthenticatedUser, outgoing_responses::CreateChatResponse};
 
 pub async fn create_chat(
     db: web::Data<DatabaseConnection>,

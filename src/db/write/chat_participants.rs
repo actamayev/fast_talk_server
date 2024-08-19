@@ -1,6 +1,6 @@
+use std::error::Error;
 use chrono::{Utc, TimeZone, FixedOffset};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set, TransactionTrait};
-use std::error::Error;
 use crate::entities::chat_participants::ActiveModel as ChatParticipantActiveModel;
 
 pub async fn add_chat_participants_record(

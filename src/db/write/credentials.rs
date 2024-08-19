@@ -1,5 +1,5 @@
-use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use std::error::Error;
+use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use crate::{entities::credentials, types::globals::CredentialsData};
 
 pub async fn add_credentials_record(db: &DatabaseConnection, credentials_data: CredentialsData) -> Result<i32, Box<dyn Error>> {
