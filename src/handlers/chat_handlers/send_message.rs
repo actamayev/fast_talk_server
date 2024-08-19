@@ -2,11 +2,11 @@ use serde_json::json;
 use sea_orm::DatabaseConnection;
 use actix_web::{web, Error, HttpRequest, HttpMessage, HttpResponse};
 use crate::db::read::chats::does_chat_exist;
-use crate::db::write::add_new_message_and_update_last_message::add_message_and_update_chat;
 use crate::types::globals::AuthenticatedUser;
 use crate::types::incoming_requests::NewMessageRequest;
 use crate::db::read::chat_participants::is_user_in_chat;
 use crate::types::outgoing_responses::SendMessageResponse;
+use crate::db::write::add_new_message_and_update_chat::add_message_and_update_chat;
 
 pub async fn send_message(
     db: web::Data<DatabaseConnection>,
