@@ -30,9 +30,10 @@ async fn main() -> std::io::Result<()> {
     // Start the HTTP server
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allow_any_origin() // Allow requests from any origin, or use .allowed_origin("http://localhost:3000") for specific origin
-            .allow_any_method() // Allow any HTTP method
+            .allowed_origin("http://localhost:3000")
+            .allowed_methods(vec!["GET", "POST"]) // Specify allowed methods
             .allow_any_header() // Allow any header
+            .supports_credentials() // Allow credentials to be included
             .max_age(3600); // Cache the CORS response for 1 hour
 
         App::new()
