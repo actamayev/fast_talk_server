@@ -1,8 +1,8 @@
 use serde_json::json;
 use sea_orm::DatabaseConnection;
 use actix_web::{web, Error, HttpRequest, HttpMessage, HttpResponse};
+use crate::db::write::create_new_chat_with_participants::create_chat_with_participants;
 use crate::types::{globals::AuthenticatedUser, outgoing_responses::CreateChatResponse};
-use crate::db::write::{chat_participants::add_chat_participants_record, chats::add_chats_record};
 use crate::db::read::{chat_participants::does_existing_chat_exist, credentials::find_user_by_id};
 
 pub async fn create_chat(
@@ -49,17 +49,12 @@ pub async fn create_chat(
     }
 
     // Create a new chat record
-    let chat_id = match add_chats_record(&db).await {
+    let chat_id = match create_chat_with_participants(&db, user.user_id, friend.user_id).await {
         Ok(id) => id,
         Err(e) => {
             return Ok(HttpResponse::InternalServerError().json(json!({"message": "Failed to create chat", "error": e.to_string()})));
         }
     };
-
-    // Add chat participants
-    if let Err(e) = add_chat_participants_record(&db, user.user_id, friend.user_id, chat_id).await {
-        return Ok(HttpResponse::InternalServerError().json(json!({"message": "Failed to add chat participants", "error": e.to_string()})));
-    }
 
     // Return success response
     let response = CreateChatResponse { chat_id };

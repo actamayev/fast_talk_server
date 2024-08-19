@@ -1,24 +1,32 @@
 use std::error::Error;
-use chrono::{Utc, TimeZone, FixedOffset};
+use chrono::{FixedOffset, TimeZone, Utc};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set, TransactionTrait};
-use crate::entities::chat_participants::ActiveModel as ChatParticipantActiveModel;
+use crate::entities::{chats, chat_participants::ActiveModel as ChatParticipantActiveModel};
 
-pub async fn add_chat_participants_record(
+pub async fn create_chat_with_participants(
     db: &DatabaseConnection,
     user_id_1: i32,
     user_id_2: i32,
-    chat_id: i32,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<i32, Box<dyn Error>> {
     // Start a transaction
     let txn = db.begin().await?;
 
     // Get the current Utc time
     let now_utc = Utc::now();
-
-    // Convert Utc time to a FixedOffset with a zero offset (UTC)
     let now_fixed = FixedOffset::east_opt(0)
         .ok_or("Failed to create FixedOffset")?
         .from_utc_datetime(&now_utc.naive_utc());
+
+    // Create a new chat record
+    let chats = chats::ActiveModel {
+        last_message: Set(None), // Set to None if there is no initial message
+        updated_at: Set(now_fixed), // Set the fixed offset time
+        ..Default::default()
+    };
+
+    // Insert the new chat record into the database
+    let insert_result = chats.insert(&txn).await?;
+    let chat_id = insert_result.chat_id; // Retrieve the chat ID
 
     // Create two new ActiveModel instances for the chat_participants table
     let chat_participant_1 = ChatParticipantActiveModel {
@@ -35,14 +43,15 @@ pub async fn add_chat_participants_record(
         ..Default::default()
     };
 
-    // Insert the first record into the database
+    // Insert the first chat participant record into the database
     chat_participant_1.insert(&txn).await?;
 
-    // Insert the second record into the database
+    // Insert the second chat participant record into the database
     chat_participant_2.insert(&txn).await?;
 
     // Commit the transaction
     txn.commit().await?;
 
-    Ok(())
+    // Return the chat ID
+    Ok(chat_id)
 }

@@ -2,9 +2,8 @@ use serde_json::json;
 use sea_orm::DatabaseConnection;
 use actix_web::{web, Error, HttpRequest, HttpMessage, HttpResponse};
 use crate::db::read::chats::does_chat_exist;
+use crate::db::write::add_new_message_and_update_last_message::add_message_and_update_chat;
 use crate::types::globals::AuthenticatedUser;
-use crate::db::write::messages::add_messages_record;
-use crate::db::write::chats::update_chat_last_message;
 use crate::types::incoming_requests::NewMessageRequest;
 use crate::db::read::chat_participants::is_user_in_chat;
 use crate::types::outgoing_responses::SendMessageResponse;
@@ -37,9 +36,7 @@ pub async fn send_message(
         Ok(true) => {} // Proceed if the chat exists
     }
 
-	let message_id = add_messages_record(&db, chat_id, user.user_id, json.message.clone()).await?;
-
-    update_chat_last_message(&db, chat_id, json.message.clone()).await?;
+	let message_id = add_message_and_update_chat(&db, chat_id, user.user_id, json.message.clone()).await?;
 
     // Return success response
     let response = SendMessageResponse { message_id };

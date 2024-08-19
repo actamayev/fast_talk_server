@@ -34,7 +34,6 @@ pub async fn register(
 
     let user_id = add_credentials_record(&db, credentials_data).await?;
     
-    // Generate the access token and public key (these would typically be dynamically generated)
     let access_token = sign_jwt(&user_id)?;
 
     add_login_history(&db, user_id).await?;
