@@ -1,18 +1,18 @@
+use std::rc::Rc;
+use serde_json::json;
+use std::task::{Context, Poll};
+use sea_orm::DatabaseConnection;
+use futures::future::{ok, LocalBoxFuture, Ready};
 use actix_web::{
     dev::{Service, ServiceRequest, ServiceResponse, Transform},
     Error, HttpResponse, HttpMessage, web::Data, body::BoxBody,
     error::InternalError,
 };
-use futures::future::{ok, LocalBoxFuture, Ready};
-use serde_json::json;
-use std::rc::Rc;
-use std::task::{Context, Poll};
-use sea_orm::DatabaseConnection;
 
-use crate::{db::read::credentials::find_user_by_id, types::globals::AuthenticatedUser};
 use crate::utils::auth_helpers::jwt::decode_jwt;
+use crate::{db::read::credentials::find_user_by_id, types::globals::AuthenticatedUser};
 
-#[derive(Clone)] // Add this line
+#[derive(Clone)]
 pub struct JwtVerify {
     db: Data<DatabaseConnection>
 }

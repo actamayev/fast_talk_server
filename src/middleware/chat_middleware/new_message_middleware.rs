@@ -48,7 +48,7 @@ where
 
     fn call(&self, mut req: ServiceRequest) -> Self::Future {
         let service = Rc::clone(&self.service);
-    
+
         Box::pin(async move {
             // Extract the JSON body
             let payload = req.extract::<web::Json<NewMessageRequest>>().await;

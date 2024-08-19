@@ -27,7 +27,7 @@ pub async fn retrieve_chats_list(
 		).into();
 		error
 	})?;
-	
+
 	let chat_info = get_chats_info(&db, &chat_ids).await.map_err(|e| {
 		let error_message = format!("Failed to retrieve chat information for chat IDs {:?}: {}", chat_ids, e);
 		let error: actix_web::Error = actix_web::error::InternalError::from_response(
