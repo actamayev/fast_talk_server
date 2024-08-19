@@ -1,6 +1,6 @@
 use serde_json::json;
 use sea_orm::DatabaseConnection;
-use crate::utils::socket::socket_setup::ClientMap;
+use crate::utils::socket::socket_setup::{ClientMap, WsMessage};
 use actix_web::{web, Error, HttpRequest, HttpMessage, HttpResponse};
 use crate::db::read::chats::does_chat_exist;
 use crate::types::globals::AuthenticatedUser;
@@ -40,17 +40,15 @@ pub async fn send_message(
 
 	let message_id = add_message_and_update_chat(&db, chat_id, user.user_id, json.message.clone()).await?;
 
-    let other_user_id = get_other_user_in_chat(&db, chat_id, user.user_id).await;
-
-    match other_user_id {
+    let other_user_id = match get_other_user_in_chat(&db, chat_id, user.user_id).await {
+        Ok(Some(user_id)) => user_id, // Extract the user_id if present
         Ok(None) => {
             return Ok(HttpResponse::InternalServerError().json(json!({"message": "Unable to find other user"})));
         }
-        Ok(Some(user_id)) => { }
         Err(e) => {
             return Ok(HttpResponse::InternalServerError().json(json!({"message": "Failed to check if chat exists", "error": e.to_string()})));
         }
-    }
+    };    
 
     let clients = clients.lock().unwrap();
     if let Some(addr) = clients.get(&other_user_id) {

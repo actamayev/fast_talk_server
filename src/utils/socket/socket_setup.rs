@@ -1,8 +1,11 @@
 use actix::prelude::*;
-use actix_web::{web, HttpRequest, HttpResponse, Error};
+use serde_json::json;
 use actix_web_actors::ws;
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+use actix_web::{web, HttpRequest, HttpResponse, Error, error::InternalError};
+
+use crate::utils::auth_helpers::jwt::decode_jwt;
 
 // Type alias for shared client map
 pub type ClientMap = Arc<Mutex<HashMap<i32, Addr<MyWebSocket>>>>;
@@ -10,7 +13,9 @@ pub type ClientMap = Arc<Mutex<HashMap<i32, Addr<MyWebSocket>>>>;
 // Define a WebSocket message that can be sent to the clients
 #[derive(Message)]
 #[rtype(result = "()")]
-struct WsMessage(String);
+pub struct WsMessage(
+   pub String
+);
 
 pub struct MyWebSocket {
     pub user_id: i32,
@@ -36,13 +41,8 @@ impl Actor for MyWebSocket {
 // Handle incoming WebSocket messages
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
-        match msg {
-            Ok(ws::Message::Text(text)) => {
-                // Here we could handle incoming messages if needed
-                // For now, we simply echo the message back
-                ctx.text(text);
-            }
-            _ => (),
+        if let Ok(ws::Message::Text(text)) = msg {
+            ctx.text(text);
         }
     }
 }
@@ -62,20 +62,37 @@ pub async fn ws_index(
     stream: web::Payload,
     clients: web::Data<ClientMap>,
 ) -> Result<HttpResponse, Error> {
-    // Extract user ID from request (assumed to be part of the query or headers)
-    let user_id = extract_user_id(&req);
+    // Extract user ID from request, propagating any errors
+    let user_id = extract_user_id(&req).await?;
 
-    // Initialize the WebSocket connection
+    // Initialize the WebSocket connection with the extracted user_id
     let ws = MyWebSocket {
         user_id,
         clients: clients.get_ref().clone(),
     };
+
+    // Start the WebSocket connection
     ws::start(ws, &req, stream)
 }
 
-fn extract_user_id(req: &HttpRequest) -> i32 {
-    // Extract the user ID from the request; for simplicity, we'll assume it's an integer
-    // You might extract it from a query parameter, header, or token
-    // Here, we're just hardcoding for illustration
-    1 // Replace with actual logic to extract user_id
+async fn extract_user_id(req: &HttpRequest) -> Result<i32, Error> {
+    if let Some(auth_header) = req.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            // Decode the JWT and get the user_id
+            let claims = decode_jwt(auth_str)?;
+            let user_id = claims.sub.parse::<i32>().map_err(|_| {
+                // Convert HttpResponse to actix_web::Error
+                let response = HttpResponse::Unauthorized()
+                    .json(json!({"message": "Invalid user ID in token"}));
+                actix_web::Error::from(InternalError::from_response("", response))
+            })?;
+            
+            return Ok(user_id);
+        }
+    }
+
+    // If no Authorization header or invalid token, return an error
+    let response = HttpResponse::Unauthorized()
+        .json(json!({"message": "Authorization header missing or invalid"}));
+    Err(InternalError::from_response("", response).into())
 }
