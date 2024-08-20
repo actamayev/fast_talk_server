@@ -76,22 +76,21 @@ pub async fn ws_index(
 }
 
 async fn extract_user_id(req: &HttpRequest) -> Result<i32, Error> {
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
+    if let Some(query) = req.uri().query() {
+        let params: HashMap<_, _> = url::form_urlencoded::parse(query.as_bytes()).into_owned().collect();
+        if let Some(token) = params.get("token") {
             // Decode the JWT and get the user_id
-            let claims = decode_jwt(auth_str)?;
+            let claims = decode_jwt(token)?;
             let user_id = claims.sub.parse::<i32>().map_err(|_| {
-                // Convert HttpResponse to actix_web::Error
                 let response = HttpResponse::Unauthorized()
                     .json(json!({"message": "Invalid user ID in token"}));
                 actix_web::Error::from(InternalError::from_response("", response))
             })?;
-            
             return Ok(user_id);
         }
     }
 
-    // If no Authorization header or invalid token, return an error
+    // If neither the header nor the query parameter has the token, return an error
     let response = HttpResponse::Unauthorized()
         .json(json!({"message": "Authorization header missing or invalid"}));
     Err(InternalError::from_response("", response).into())
