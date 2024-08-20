@@ -67,3 +67,21 @@ pub async fn get_user_chat_ids(
 
     Ok(chat_ids) // Return the vector of chat_id's
 }
+
+pub async fn get_other_user_in_chat(
+    db: &DatabaseConnection,
+    chat_id: i32,
+    user_id: i32,
+) -> Result<Option<i32>, DbErr> {
+    // Query the chat participants table for the other participant's user_id
+    let other_user = chat_participants::Entity::find()
+        .filter(chat_participants::Column::ChatId.eq(chat_id))  // Filter by chat_id
+        .filter(chat_participants::Column::UserId.ne(user_id))  // Exclude the passed user_id
+        .select_only()
+        .column(chat_participants::Column::UserId)  // Select only the user_id column
+        .into_tuple::<i32>()  // Map the result to a tuple of i32 (the user_id)
+        .one(db)
+        .await?;  // Fetch the result, returning an Option<i32>
+
+    Ok(other_user)
+}

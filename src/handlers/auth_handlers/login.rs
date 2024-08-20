@@ -21,7 +21,6 @@ pub async fn login(
 
     let do_passwords_match = Hash::check_password(&req.password, &user.password)
         .map_err(actix_web::error::ErrorInternalServerError)?;
-
     if !do_passwords_match {
         return Ok(HttpResponse::BadRequest().json(serde_json::json!({
             "message": "Wrong password"
