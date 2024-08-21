@@ -18,6 +18,7 @@ pub struct ChatInfo {
     pub updated_at: NaiveDateTime,
     pub created_at: NaiveDateTime,
     pub last_message: Option<String>,
+    pub last_message_sender_id: Option<i32>
 }
 
 pub async fn get_chats_info(
@@ -35,6 +36,7 @@ pub async fn get_chats_info(
         .column(chats::Column::UpdatedAt)
         .column(chats::Column::CreatedAt)
         .column(chats::Column::LastMessage)
+        .column(chats::Column::LastMessageSenderId)
         .into_model::<chats::Model>() // Use the model type provided by the SeaORM entity
         .all(db)
         .await?;
@@ -47,6 +49,7 @@ pub async fn get_chats_info(
             created_at: chat.created_at.naive_utc(),
             updated_at: chat.updated_at.naive_utc(),  // Convert DateTime<FixedOffset> to NaiveDateTime
             last_message: chat.last_message,
+            last_message_sender_id: chat.last_message_sender_id
         })
         .collect();
 
