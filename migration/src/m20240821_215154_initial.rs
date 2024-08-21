@@ -15,8 +15,8 @@ impl MigrationTrait for Migration {
                 .col(ColumnDef::new(Credentials::Username).string().not_null())
                 .col(ColumnDef::new(Credentials::Password).string().not_null())
                 .col(ColumnDef::new(Credentials::Email).string().not_null())
-                .col(ColumnDef::new(Credentials::IsActive).boolean().not_null())
-                .col(ColumnDef::new(Credentials::CreatedAt).timestamp_with_time_zone().not_null())
+                .col(ColumnDef::new(Credentials::IsActive).boolean().not_null().default(true),)
+                .col(ColumnDef::new(Credentials::CreatedAt).timestamp_with_time_zone().not_null().default(Expr::current_timestamp()))
                 .to_owned(),
         ).await?;
 
@@ -28,7 +28,7 @@ impl MigrationTrait for Migration {
                 .col(ColumnDef::new(Chats::ChatId).integer().not_null().primary_key().auto_increment())
                 .col(ColumnDef::new(Chats::LastMessage).string().null())
                 .col(ColumnDef::new(Chats::LastMessageSenderId).integer().null())
-                .col(ColumnDef::new(Chats::CreatedAt).timestamp_with_time_zone().not_null())
+                .col(ColumnDef::new(Chats::CreatedAt).timestamp_with_time_zone().not_null().default(Expr::current_timestamp()))
                 .col(ColumnDef::new(Chats::UpdatedAt).timestamp_with_time_zone().not_null())
                 .foreign_key(
                     ForeignKey::create()
@@ -49,7 +49,7 @@ impl MigrationTrait for Migration {
                 .col(ColumnDef::new(ChatParticipants::ChatParticipantId).integer().not_null().primary_key().auto_increment())
                 .col(ColumnDef::new(ChatParticipants::ChatId).integer().not_null())
                 .col(ColumnDef::new(ChatParticipants::UserId).integer().not_null())
-                .col(ColumnDef::new(ChatParticipants::JoinedAt).timestamp_with_time_zone().not_null())
+                .col(ColumnDef::new(ChatParticipants::JoinedAt).timestamp_with_time_zone().not_null().default(Expr::current_timestamp()))
                 .foreign_key(
                     ForeignKey::create()
                         .name("fk_chat_participants_chat_id")
@@ -76,7 +76,7 @@ impl MigrationTrait for Migration {
                 .if_not_exists()
                 .col(ColumnDef::new(LoginHistory::LoginHistoryId).integer().not_null().primary_key().auto_increment())
                 .col(ColumnDef::new(LoginHistory::UserId).integer().not_null())
-                .col(ColumnDef::new(LoginHistory::LoginTime).timestamp_with_time_zone().not_null())
+                .col(ColumnDef::new(LoginHistory::LoginTime).timestamp_with_time_zone().not_null().default(Expr::current_timestamp()))
                 .foreign_key(
                     ForeignKey::create()
                         .name("fk_login_history_user_id")
@@ -97,7 +97,7 @@ impl MigrationTrait for Migration {
                 .col(ColumnDef::new(Messages::ChatId).integer().not_null())
                 .col(ColumnDef::new(Messages::SenderId).integer().not_null())
                 .col(ColumnDef::new(Messages::Text).string().not_null())
-                .col(ColumnDef::new(Messages::SentAt).timestamp_with_time_zone().not_null())
+                .col(ColumnDef::new(Messages::SentAt).timestamp_with_time_zone().not_null().default(Expr::current_timestamp()))
                 .foreign_key(
                     ForeignKey::create()
                         .name("fk_messages_chat_id")

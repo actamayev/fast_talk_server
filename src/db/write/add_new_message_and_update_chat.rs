@@ -35,6 +35,7 @@ pub async fn add_message_and_update_chat(
         let mut chat: chats::ActiveModel = chat.into();
         chat.last_message = Set(Some(text));           // Update the last_message field with the text of the new message
         chat.updated_at = Set(now_fixed);              // Update the updated_at field with the current time
+        chat.last_message_sender_id = Set(Some(sender_id));
 
         chat.update(&txn).await?;
     } else {
