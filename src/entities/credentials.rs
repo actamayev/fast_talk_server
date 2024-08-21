@@ -15,12 +15,16 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
     LoginHistory,
+    Chats,
+    ChatParticipants
 }
 
 impl RelationTrait for Relation {
     fn def(&self) -> RelationDef {
         match self {
             Self::LoginHistory => Entity::has_many(super::login_history::Entity).into(),
+            Self::Chats => Entity::has_many(super::chats::Entity).into(),
+            Self::ChatParticipants => Entity::has_many(super::chat_participants::Entity).into(),
         }
     }
 }
