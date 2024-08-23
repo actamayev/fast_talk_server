@@ -5,7 +5,8 @@ use crate::entities::{chat_participants, credentials};
 #[derive(Debug)]
 pub struct ChatUserInfo {
     pub chat_id: i32,
-    pub username: String
+    pub username: String,
+    pub friend_user_id: i32
 }
 
 pub async fn retrieve_chat_usernames(
@@ -46,6 +47,7 @@ pub async fn retrieve_chat_usernames(
             chat_user_info.push(ChatUserInfo {
                 chat_id,
                 username: username.clone(),
+                friend_user_id: participant_id
             });
         }
     }

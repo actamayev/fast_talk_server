@@ -16,8 +16,9 @@ pub async fn get_chat_messages(
         .map(|msg| ChatMessage {
             message_id: msg.message_id,
             did_user_send: msg.sender_id == user_id,
+            sender_user_id: msg.sender_id,
             message_text: msg.text,
-            sent_time: msg.sent_at.naive_utc(), // Convert to NaiveDateTime if needed
+            sent_time: msg.sent_at
         })
         .collect();
 

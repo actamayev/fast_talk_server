@@ -37,7 +37,7 @@ pub async fn retrieve_chats_list(
 		error
 	})?;
 
-	let chat_usernames = retrieve_chat_usernames(&db, &chat_ids, user.user_id).await.map_err(|e| {
+	let chat_usernames_data = retrieve_chat_usernames(&db, &chat_ids, user.user_id).await.map_err(|e| {
 		let error_message = format!("Failed to retrieve chat usernames for user ID {} and chat IDs {:?}: {}", user.user_id, chat_ids, e);
 		let error: actix_web::Error = actix_web::error::InternalError::from_response(
 			error_message.clone(),
@@ -48,18 +48,20 @@ pub async fn retrieve_chats_list(
 
 	// Calculate the combined chats
 	let combined_chats: Vec<SingleRetrievedChat> = chat_info.into_iter()
-		.filter_map(|chat| {
-			chat_usernames.iter().find(|user_info| user_info.chat_id == chat.chat_id).map(|user_info| {
-				SingleRetrievedChat {
-					chat_id: chat.chat_id,
-					friend_username: user_info.username.clone(),
-					last_message: chat.last_message.clone().unwrap_or_default(),
-					last_message_time: chat.updated_at,
-					chat_created_at: chat.created_at
-				}
-			})
-		})
-		.collect();
+    .filter_map(|chat| {
+        chat_usernames_data.iter().find(|user_info| user_info.chat_id == chat.chat_id).map(|user_info| {
+            SingleRetrievedChat {
+                chat_id: chat.chat_id,
+                friend_username: user_info.username.clone(),
+				friend_user_id: user_info.friend_user_id,
+                last_message: chat.last_message.clone().unwrap_or_default(),
+                last_message_time: chat.updated_at,
+                was_last_message_sent_by_user: chat.last_message_sender_id.map_or(false, |sender_id| sender_id == user.user_id),
+                chat_created_at: chat.created_at,
+            }
+        })
+    })
+    .collect();
 
     Ok(HttpResponse::Ok().json(combined_chats))
 }

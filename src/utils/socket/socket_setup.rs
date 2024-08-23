@@ -29,7 +29,6 @@ impl Actor for MyWebSocket {
         let addr = ctx.address();
         let mut clients = self.clients.lock().unwrap();
         clients.insert(self.user_id, addr);
-        ctx.text("You are connected");
     }
 
     fn stopped(&mut self, _: &mut Self::Context) {

@@ -32,7 +32,8 @@ pub async fn login(
     add_login_history(&db, user.user_id).await?;
 
     let response = AuthResponse {
-        access_token
+        access_token,
+        username: user.username
     };
 
     Ok(HttpResponse::Ok().json(response))
