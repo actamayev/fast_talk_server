@@ -5,7 +5,7 @@ use crate::entities::{messages, chats};
 
 pub struct AddMessage {
     pub message_id: i32,
-    pub message_sent_time: DateTime<FixedOffset>,  // Use DateTime<FixedOffset>
+    pub message_sent_time: DateTime<FixedOffset>
 }
 
 pub async fn add_message_and_update_chat(
@@ -26,7 +26,7 @@ pub async fn add_message_and_update_chat(
         chat_id: Set(chat_id),
         sender_id: Set(sender_id),
         text: Set(text.clone()),  // Clone the text to use it in the next update
-        sent_at: Set(now_fixed),  // Use DateTime<FixedOffset> for storage
+        sent_at: Set(now_fixed),
         ..Default::default()
     };
 
@@ -53,7 +53,7 @@ pub async fn add_message_and_update_chat(
     // Return the AddMessage struct with the message ID and sent time
     let add_message_response = AddMessage {
         message_id: insert_result.message_id,
-        message_sent_time: now_fixed,  // Use DateTime<FixedOffset>
+        message_sent_time: now_fixed
     };
 
     Ok(add_message_response)

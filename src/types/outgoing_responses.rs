@@ -47,7 +47,7 @@ pub struct OutgoingSocketMessage {
     pub chat_id: i32,
     pub message_id: i32,
     pub message_text: String,
-    pub sent_time: DateTime<FixedOffset>, // Change this to DateTime<FixedOffset>
+    pub sent_time: DateTime<FixedOffset>,
     pub friend_username: String,
     pub friend_user_id: i32
 }
