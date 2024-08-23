@@ -39,7 +39,8 @@ pub async fn register(
     add_login_history(&db, user_id).await?;
 
     let response = AuthResponse {
-        access_token
+        access_token,
+        username: req.username.clone()
     };
 
     Ok(HttpResponse::Ok().json(response))

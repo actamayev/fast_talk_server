@@ -2,6 +2,8 @@ use sea_orm::entity::prelude::*;
 use sea_orm::{DatabaseConnection, DbErr, QuerySelect};
 use crate::entities::chat_participants;
 
+use super::credentials::find_username_by_id;
+
 pub async fn does_existing_chat_exist(
     db: &DatabaseConnection,
     user_id1: i32,
@@ -68,20 +70,40 @@ pub async fn get_user_chat_ids(
     Ok(chat_ids) // Return the vector of chat_id's
 }
 
+pub struct UserDetails {
+    pub user_id: i32,
+    pub username: String,
+}
+
 pub async fn get_other_user_in_chat(
     db: &DatabaseConnection,
     chat_id: i32,
     user_id: i32,
-) -> Result<Option<i32>, DbErr> {
+) -> Result<Option<UserDetails>, DbErr> {
     // Query the chat participants table for the other participant's user_id
-    let other_user = chat_participants::Entity::find()
+    if let Some(other_user_id) = chat_participants::Entity::find()
         .filter(chat_participants::Column::ChatId.eq(chat_id))  // Filter by chat_id
         .filter(chat_participants::Column::UserId.ne(user_id))  // Exclude the passed user_id
         .select_only()
         .column(chat_participants::Column::UserId)  // Select only the user_id column
-        .into_tuple::<i32>()  // Map the result to a tuple of i32 (the user_id)
+        .into_tuple::<(i32,)>()
         .one(db)
-        .await?;  // Fetch the result, returning an Option<i32>
-
-    Ok(other_user)
+        .await?
+        .map(|tuple| tuple.0) // Extract the user_id from the tuple
+    {
+        // If another user is found, look up their username
+        if let Some(username) = find_username_by_id(db, other_user_id).await? {
+            let other_user = UserDetails {
+                user_id: other_user_id,
+                username, // username is a String
+            };
+            Ok(Some(other_user))
+        } else {
+            // If the username is not found, return None
+            Ok(None)
+        }
+    } else {
+        // If no other user is found, return None
+        Ok(None)
+    }
 }
