@@ -1,5 +1,5 @@
 use serde::Serialize;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, FixedOffset};
 
 #[derive(Serialize)]
 pub struct AuthResponse {
@@ -28,9 +28,9 @@ pub struct SingleRetrievedChat {
     pub friend_username: String,
     pub friend_user_id: i32,
     pub last_message: String,
-    pub last_message_time: NaiveDateTime,
+    pub last_message_time: DateTime<FixedOffset>,
     pub was_last_message_sent_by_user: bool,
-    pub chat_created_at: NaiveDateTime
+    pub chat_created_at: DateTime<FixedOffset>
 }
 
 #[derive(Serialize)]
@@ -39,7 +39,7 @@ pub struct ChatMessage {
     pub did_user_send: bool,
     pub sender_user_id: i32,
     pub message_text: String,
-    pub sent_time: NaiveDateTime
+    pub sent_time: DateTime<FixedOffset>
 }
 
 #[derive(Serialize)]
@@ -47,7 +47,7 @@ pub struct OutgoingSocketMessage {
     pub chat_id: i32,
     pub message_id: i32,
     pub message_text: String,
-    pub sent_time: NaiveDateTime,
+    pub sent_time: DateTime<FixedOffset>, // Change this to DateTime<FixedOffset>
     pub friend_username: String,
     pub friend_user_id: i32
 }

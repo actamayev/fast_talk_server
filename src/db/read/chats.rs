@@ -1,5 +1,5 @@
 use std::error::Error;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, FixedOffset};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect};
 use crate::entities::chats;
 
@@ -15,8 +15,8 @@ pub async fn does_chat_exist(db: &DatabaseConnection, chat_id: i32) -> Result<bo
 #[derive(Debug)]
 pub struct ChatInfo {
     pub chat_id: i32,
-    pub updated_at: NaiveDateTime,
-    pub created_at: NaiveDateTime,
+    pub updated_at: DateTime<FixedOffset>,
+    pub created_at: DateTime<FixedOffset>,
     pub last_message: Option<String>,
     pub last_message_sender_id: Option<i32>
 }
@@ -46,8 +46,8 @@ pub async fn get_chats_info(
         .into_iter()
         .map(|chat| ChatInfo {
             chat_id: chat.chat_id,
-            created_at: chat.created_at.naive_utc(),
-            updated_at: chat.updated_at.naive_utc(),  // Convert DateTime<FixedOffset> to NaiveDateTime
+            created_at: chat.created_at,
+            updated_at: chat.updated_at,
             last_message: chat.last_message,
             last_message_sender_id: chat.last_message_sender_id
         })

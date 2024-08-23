@@ -48,7 +48,7 @@ pub async fn send_message(
         Err(e) => {
             return Ok(HttpResponse::InternalServerError().json(json!({"message": "Failed to check if chat exists", "error": e.to_string()})));
         }
-    };    
+    };
 
     let clients = clients.lock().unwrap();
     if let Some(addr) = clients.get(&other_user_details.user_id) {

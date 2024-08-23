@@ -1,11 +1,11 @@
 use std::error::Error;
-use chrono::{FixedOffset, TimeZone, Utc, NaiveDateTime};
+use chrono::{FixedOffset, Local, DateTime};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set, TransactionTrait};
 use crate::entities::{messages, chats};
 
 pub struct AddMessage {
     pub message_id: i32,
-    pub message_sent_time: NaiveDateTime
+    pub message_sent_time: DateTime<FixedOffset>,  // Use DateTime<FixedOffset>
 }
 
 pub async fn add_message_and_update_chat(
@@ -17,19 +17,16 @@ pub async fn add_message_and_update_chat(
     // Start a transaction
     let txn = db.begin().await?;
 
-    // Get the current Utc time
-    let now_utc = Utc::now();
-    let now_naive = now_utc.naive_utc();  // Convert to NaiveDateTime
-    let now_fixed = FixedOffset::east_opt(0)
-        .ok_or("Failed to create FixedOffset")?
-        .from_utc_datetime(&now_utc.naive_utc());
+    // Get the current local time (assumed to be ET)
+    let now_local = Local::now();
+    let now_fixed: DateTime<FixedOffset> = now_local.with_timezone(&FixedOffset::east_opt(-5 * 3600).unwrap());
 
     // Create a new message record
     let new_message = messages::ActiveModel {
         chat_id: Set(chat_id),
         sender_id: Set(sender_id),
         text: Set(text.clone()),  // Clone the text to use it in the next update
-        sent_at: Set(now_fixed),  // Use NaiveDateTime
+        sent_at: Set(now_fixed),  // Use DateTime<FixedOffset> for storage
         ..Default::default()
     };
 
@@ -56,7 +53,7 @@ pub async fn add_message_and_update_chat(
     // Return the AddMessage struct with the message ID and sent time
     let add_message_response = AddMessage {
         message_id: insert_result.message_id,
-        message_sent_time: now_naive,  // Use NaiveDateTime
+        message_sent_time: now_fixed,  // Use DateTime<FixedOffset>
     };
 
     Ok(add_message_response)
