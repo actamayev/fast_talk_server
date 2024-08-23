@@ -5,7 +5,7 @@ use crate::entities::{messages, chats};
 
 pub struct AddMessage {
     pub message_id: i32,
-    pub message_sent_time: NaiveDateTime,
+    pub message_sent_time: NaiveDateTime
 }
 
 pub async fn add_message_and_update_chat(

@@ -16,7 +16,8 @@ pub struct Model {
 pub enum Relation {
     LoginHistory,
     Chats,
-    ChatParticipants
+    ChatParticipants,
+    Messages
 }
 
 impl RelationTrait for Relation {
@@ -25,6 +26,7 @@ impl RelationTrait for Relation {
             Self::LoginHistory => Entity::has_many(super::login_history::Entity).into(),
             Self::Chats => Entity::has_many(super::chats::Entity).into(),
             Self::ChatParticipants => Entity::has_many(super::chat_participants::Entity).into(),
+            Self::Messages => Entity::has_many(super::messages::Entity).into(),
         }
     }
 }
