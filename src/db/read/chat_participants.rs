@@ -1,7 +1,6 @@
 use sea_orm::entity::prelude::*;
 use sea_orm::{DatabaseConnection, DbErr, QuerySelect};
 use crate::entities::chat_participants;
-
 use super::credentials::find_username_by_id;
 
 pub async fn does_existing_chat_exist(
