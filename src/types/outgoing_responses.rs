@@ -8,6 +8,11 @@ pub struct AuthResponse {
 }
 
 #[derive(Serialize)]
+pub struct PersonalInfoResponse {
+    pub username: String
+}
+
+#[derive(Serialize)]
 pub struct CreateChatResponse {
     pub chat_id: i32
 }

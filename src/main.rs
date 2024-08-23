@@ -40,7 +40,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors) // Apply the CORS middleware
             .app_data(db_data.clone()) // Pass the database connection to the app
             .app_data(web::Data::new(clients.clone())) // Pass the shared client map to the app
-            .configure(routes::auth_routes::auth_routes) // Configure auth routes
+            .configure(|cfg| routes::auth_routes::auth_routes(cfg, db_data.clone())) // Configure auth routes
             .configure(|cfg| routes::chat_routes::chat_routes(cfg, db_data.clone())) // Configure chat routes
             .route("/health", web::get().to(health_check)) // Add health check route
             .route("/ws/", web::get().to(ws_index)) // Add WebSocket route
