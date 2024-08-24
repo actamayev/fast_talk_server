@@ -1,8 +1,8 @@
+use std::error::Error;
 use sea_orm::prelude::Expr;
 use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, QuerySelect};
-use std::error::Error;
 use crate::entities::credentials;
-use crate::types::globals::EmailOrUsername;
+use crate::types::globals::{EmailOrUsername, UserInfo};
 use crate::utils::auth_helpers::determine_contact_type::determine_login_contact_type;
 
 pub async fn does_email_exist(db: &DatabaseConnection, email: &str) -> Result<bool, Box<dyn Error>> {
@@ -75,4 +75,29 @@ pub async fn find_username_by_id(
     let username = result.map(|tuple| tuple.0);
 
     Ok(username)
+}
+
+pub async fn find_user_by_username(
+    db: &DatabaseConnection,
+    username_to_search_for: String,
+    username_to_exclude: String
+) -> Result<Vec<UserInfo>, DbErr> {
+    let pattern = format!("%{}%", username_to_search_for);
+
+    let results = credentials::Entity::find()
+        .filter(credentials::Column::Username.like(&pattern)) // Apply the LIKE filter with the pattern
+        .filter(credentials::Column::Username.ne(username_to_exclude)) // Exclude the given username
+        .select_only()
+        .column(credentials::Column::Username)
+        .column(credentials::Column::UserId)
+        .into_tuple::<(String, i32)>() // Directly extract the username and user_id
+        .all(db)  // Fetch all matching results
+        .await?;
+
+    // Map the results into a vector of UserInfo structs
+    let user_infos = results.into_iter()
+        .map(|(username, user_id)| UserInfo { username, user_id })
+        .collect();
+
+    Ok(user_infos)
 }

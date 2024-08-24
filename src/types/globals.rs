@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 use crate::entities::credentials::Model as User;
 
 pub struct CredentialsData {
@@ -14,3 +16,9 @@ pub enum EmailOrUsername {
 // Define a wrapper struct for the authenticated user
 #[derive(Clone)]
 pub struct AuthenticatedUser(pub User); // User is your user model type
+
+#[derive(Debug, Clone, Serialize)]
+pub struct UserInfo {
+    pub username: String,
+    pub user_id: i32
+}
