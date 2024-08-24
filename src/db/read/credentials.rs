@@ -90,6 +90,7 @@ pub async fn find_user_by_username(
         .select_only()
         .column(credentials::Column::Username)
         .column(credentials::Column::UserId)
+        .limit(10)
         .into_tuple::<(String, i32)>() // Directly extract the username and user_id
         .all(db)  // Fetch all matching results
         .await?;
