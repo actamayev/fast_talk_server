@@ -48,6 +48,6 @@ pub struct OutgoingSocketMessage {
     pub message_id: i32,
     pub message_text: String,
     pub sent_time: DateTime<FixedOffset>,
-    pub friend_username: String,
-    pub friend_user_id: i32
+    pub message_sender_user_id: i32,
+    pub message_sender_username: String
 }

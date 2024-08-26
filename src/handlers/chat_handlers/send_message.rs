@@ -57,8 +57,8 @@ pub async fn send_message(
             message_id: new_message_response.message_id, 
             message_text: json.message.clone(),
             sent_time: new_message_response.message_sent_time,
-            friend_user_id: other_user_details.user_id,
-            friend_username: other_user_details.username
+            message_sender_user_id: user.user_id,
+            message_sender_username: user.username
         };
         if let Ok(serialized_message) = serde_json::to_string(&outgoing_socket_response) {
             addr.do_send(WsMessage(serialized_message)); // Send the serialized message to the WebSocket
