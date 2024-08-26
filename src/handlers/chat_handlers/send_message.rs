@@ -40,8 +40,8 @@ pub async fn send_message(
 
 	let new_message_response = add_message_and_update_chat(&db, chat_id, user.user_id, json.message.clone()).await?;
 
-    let other_user_details = match get_other_user_in_chat(&db, chat_id, user.user_id).await {
-        Ok(Some(other_user_details)) => other_user_details, // Extract the user_id if present
+    let other_user_id = match get_other_user_in_chat(&db, chat_id, user.user_id).await {
+        Ok(Some(other_user_id)) => other_user_id, // Extract the user_id if present
         Ok(None) => {
             return Ok(HttpResponse::InternalServerError().json(json!({"message": "Unable to find other user"})));
         }
@@ -51,7 +51,7 @@ pub async fn send_message(
     };
 
     let clients = clients.lock().unwrap();
-    if let Some(addr) = clients.get(&other_user_details.user_id) {
+    if let Some(addr) = clients.get(&other_user_id) {
         let outgoing_socket_response = OutgoingSocketMessage {
             chat_id,
             message_id: new_message_response.message_id, 

@@ -59,24 +59,6 @@ pub async fn find_user_by_id(
     Ok(user)
 }
 
-pub async fn find_username_by_id(
-    db: &DatabaseConnection,
-    user_id: i32,
-) -> Result<Option<String>, DbErr> {
-    let result = credentials::Entity::find()
-        .filter(credentials::Column::UserId.eq(user_id))
-        .select_only()
-        .column(credentials::Column::Username)
-        .into_tuple::<(String,)>()
-        .one(db)
-        .await?;
-
-    // Extract the username from the tuple if it exists
-    let username = result.map(|tuple| tuple.0);
-
-    Ok(username)
-}
-
 pub async fn find_user_by_username(
     db: &DatabaseConnection,
     username_to_search_for: String,
