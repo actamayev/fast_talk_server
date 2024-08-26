@@ -73,7 +73,7 @@ where
                         let response = HttpResponse::Unauthorized()
                             .json(json!({"message": "Invalid user ID in token"}));
                         actix_web::Error::from(InternalError::from_response("", response))
-                    })?;                    
+                    })?;
 
                     // Find the user by ID
                     let user = find_user_by_id(&db, user_id).await?.expect("User not found");

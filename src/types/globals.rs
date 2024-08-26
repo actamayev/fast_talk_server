@@ -17,7 +17,7 @@ pub enum EmailOrUsername {
 #[derive(Clone)]
 pub struct AuthenticatedUser(pub User); // User is your user model type
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Serialize)]
 pub struct UserInfo {
     pub username: String,
     pub user_id: i32
