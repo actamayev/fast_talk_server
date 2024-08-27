@@ -18,7 +18,7 @@ use crate::{db::read::credentials::find_user_by_id, utils::auth_helpers::jwt::de
 #[derive(Clone)]
 pub struct JwtVerify {
     cache: Arc<RwLock<HashMap<i32, (AuthenticatedUser, Instant)>>>,
-    db: Data<DatabaseConnection>, // Replace with your actual database connection type
+    db: Data<DatabaseConnection>
 }
 
 impl JwtVerify {
@@ -28,31 +28,6 @@ impl JwtVerify {
             db,
         }
     }
-
-    pub async fn get_user(&self, user_id: i32) -> Result<AuthenticatedUser, Error> {
-        let mut cache = self.cache.write().await;
-
-        // Check if the user is in the cache and not expired
-        if let Some((user, timestamp)) = cache.get(&user_id) {
-            if timestamp.elapsed() < Duration::from_secs(600) {
-                println!("here, user exists in cache");
-                return Ok(user.clone());
-            }
-        }
-
-        // User is not in cache or entry is expired, fetch from the database
-        let user = find_user_by_id(&self.db, user_id).await?.ok_or_else(|| {
-            let response = HttpResponse::Unauthorized()
-                .json(json!({"message": "User not found"}));
-            actix_web::Error::from(InternalError::from_response("", response))
-        })?;
-
-        // Cache the user
-        cache.insert(user_id, (AuthenticatedUser(user.clone()), Instant::now()));
-        println!("user doesn't exist in cache, attaching now");
-
-        Ok(AuthenticatedUser(user))
-    }
 }
 
 impl<S> Transform<S, ServiceRequest> for JwtVerify
@@ -61,25 +36,84 @@ where
 {
     type Response = ServiceResponse<BoxBody>;
     type Error = Error;
-    type Transform = AuthMiddleware<S>;
+    type Transform = Rc<AuthMiddleware<S>>;
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ok(AuthMiddleware {
+        ok(Rc::new(AuthMiddleware {
             service: Rc::new(service),
             cache: self.cache.clone(),
             db: self.db.clone(),
-        })
+        }))
+    }
+}
+
+impl<S> AuthMiddleware<S> {
+    async fn get_user_from_cache(
+        &self,
+        user_id: i32,
+    ) -> Result<AuthenticatedUser, ()> {
+        let cache = self.cache.write().await;
+    
+        // Check if the user is in the cache and not expired
+        if let Some((user, timestamp)) = cache.get(&user_id) {
+            if timestamp.elapsed() < Duration::from_secs(600) {
+                println!("here, user exists in cache");
+                Ok(user.clone())
+            } else {
+                Err(())
+            }
+        } else {
+            Err(())
+        }
+    }
+
+    async fn get_user_from_db_and_cache(
+        &self,
+        user_id: i32,
+    ) -> Result<AuthenticatedUser, actix_web::Error> {
+        let user_result = find_user_by_id(&self.db, user_id).await;
+    
+        // Handle the result, returning an error if the user is not found
+        let user = match user_result {
+            Ok(Some(user)) => user,
+            Ok(None) => {
+                let response = HttpResponse::Unauthorized()
+                    .json(json!({"message": "User not found"}));
+                return Err(actix_web::Error::from(InternalError::from_response("", response)));
+            }
+            Err(err) => {
+                return Err(err.into());
+            }
+        };
+    
+        // Cache the user
+        let authenticated_user = AuthenticatedUser(user.clone());
+        {
+            let mut cache = self.cache.write().await;
+            cache.insert(user_id, (authenticated_user.clone(), Instant::now()));
+        }
+    
+        Ok(authenticated_user)
+    }
+
+    async fn authenticate_user(
+        &self,
+        user_id: i32,
+    ) -> Result<AuthenticatedUser, actix_web::Error> {
+        match self.get_user_from_cache(user_id).await {
+            Ok(user) => Ok(user),
+            Err(_) => self.get_user_from_db_and_cache(user_id).await,
+        }
     }
 }
 
 pub struct AuthMiddleware<S> {
     service: Rc<S>,
     cache: Arc<RwLock<HashMap<i32, (AuthenticatedUser, Instant)>>>,
-    db: Data<DatabaseConnection>, // Replace with your actual database connection type
+    db: Data<DatabaseConnection>
 }
-
 impl<S> Service<ServiceRequest> for AuthMiddleware<S>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<BoxBody>, Error = Error> + 'static,
@@ -94,8 +128,7 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let service = Rc::clone(&self.service);
-        let cache = self.cache.clone();
-        let db = self.db.clone();
+        let self_rc: Rc<AuthMiddleware<S>> = Rc::clone(&self); // This works because `self` is now `Rc<AuthMiddleware<S>>`
 
         Box::pin(async move {
             if let Some(auth_header) = req.headers().get("Authorization") {
@@ -107,9 +140,8 @@ where
                         actix_web::Error::from(InternalError::from_response("", response))
                     })?;
 
-                    let auth_cache = JwtVerify { cache, db };
-                    let user = auth_cache.get_user(user_id).await?;
-
+                    // Dereference Rc to call the method on AuthMiddleware<S>
+                    let user = self_rc.authenticate_user(user_id).await?;
                     req.extensions_mut().insert(user);
 
                     return service.call(req).await;
