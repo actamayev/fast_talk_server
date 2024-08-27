@@ -1,4 +1,4 @@
-// use env_logger::Env;
+use env_logger::Env;
 use actix_cors::Cors;
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
@@ -19,7 +19,7 @@ mod establish_connection;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Initialize logging
-    // env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
 
     // Establish the database connection
     let db = establish_connection::establish_connection().await;
