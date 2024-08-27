@@ -10,34 +10,31 @@ use crate::handlers::chat_handlers::search_for_usernames::search_for_usernames;
 use crate::handlers::chat_handlers::retrieve_chat_messages::retrieve_chat_messages;
 
 pub fn chat_routes(cfg: &mut web::ServiceConfig, db: web::Data<DatabaseConnection>) {
+    // Create the JwtVerify middleware instance once
     let jwt_verify = JwtVerify::new(db.clone());
 
     cfg.service(
         web::scope("/chat")
+            .wrap(jwt_verify.clone()) // Apply the middleware to the entire scope
             .service(
                 web::resource("/create-chat/{friendId}")
-                    .wrap(jwt_verify.clone())
                     .route(web::post().to(create_chat))
             )
             .service(
                 web::resource("/send-message/{chatId}")
-                    .wrap(jwt_verify.clone())
                     .wrap(ValidateNewMessage)
                     .route(web::post().to(send_message))
             )
             .service(
                 web::resource("/retrieve-chats-list")
-                    .wrap(jwt_verify.clone())
                     .route(web::get().to(retrieve_chats_list))
             )
             .service(
                 web::resource("/retrieve-chat-messages/{chatId}")
-                    .wrap(jwt_verify.clone())
                     .route(web::get().to(retrieve_chat_messages))
             )
             .service(
                 web::resource("/search-for-usernames/{username}")
-                    .wrap(jwt_verify.clone())
                     .route(web::get().to(search_for_usernames))
             )
     );

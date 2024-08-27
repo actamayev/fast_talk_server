@@ -1,8 +1,8 @@
 use std::error::Error;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
-use crate::{entities::credentials, types::globals::CredentialsData};
+use crate::{entities::credentials::{self, Model as User}, types::globals::CredentialsData};
 
-pub async fn add_credentials_record(db: &DatabaseConnection, credentials_data: CredentialsData) -> Result<i32, Box<dyn Error>> {
+pub async fn add_credentials_record(db: &DatabaseConnection, credentials_data: CredentialsData) -> Result<User, Box<dyn Error>> {
     // Create a new ActiveModel instance for the credentials table
     let credentials = credentials::ActiveModel {
         username: Set(credentials_data.username),      // Move the ownership of the string
@@ -15,5 +15,5 @@ pub async fn add_credentials_record(db: &DatabaseConnection, credentials_data: C
     let insert_result = credentials.insert(db).await?;
 
     // Return the user ID (primary key)
-    Ok(insert_result.user_id)
+    Ok(insert_result)
 }

@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 use actix_web::{App, HttpServer, web};
 use handlers::health_handler::health_check;
+use utils::auth_helpers::auth_cache::AuthCache;
 use utils::socket::socket_setup::{ws_index, ClientMap};
 
 mod db;
@@ -24,6 +25,8 @@ async fn main() -> std::io::Result<()> {
     let db = establish_connection::establish_connection().await;
     let db_data = web::Data::new(db);
 
+    let auth_cache = web::Data::new(AuthCache::new());
+
     // Create the shared client map
     let clients: ClientMap = Arc::new(Mutex::new(HashMap::new()));
 
@@ -39,6 +42,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors) // Apply the CORS middleware
             .app_data(db_data.clone()) // Pass the database connection to the app
+            .app_data(auth_cache.clone()) // Pass the auth cache to the app
             .app_data(web::Data::new(clients.clone())) // Pass the shared client map to the app
             .configure(|cfg| routes::auth_routes::auth_routes(cfg, db_data.clone())) // Configure auth routes
             .configure(|cfg| routes::chat_routes::chat_routes(cfg, db_data.clone())) // Configure chat routes
