@@ -4,13 +4,11 @@ use std::task::{Context, Poll};
 use sea_orm::DatabaseConnection;
 use futures::future::{ok, LocalBoxFuture, Ready};
 use actix_web::{
-    dev::{Service, ServiceRequest, ServiceResponse, Transform},
-    Error, HttpResponse, HttpMessage, web::Data, body::BoxBody,
-    error::InternalError,
+    body::BoxBody, dev::{Service, ServiceRequest, ServiceResponse, Transform},
+    error::InternalError, web::{self, Data}, Error, HttpMessage, HttpResponse
 };
-
-use crate::utils::auth_helpers::jwt::decode_jwt;
-use crate::{db::read::credentials::find_user_by_id, types::globals::AuthenticatedUser};
+use crate::{db::read::credentials::find_user_by_id, utils::auth_helpers::jwt::decode_jwt};
+use crate::{types::globals::AuthenticatedUser, utils::auth_helpers::auth_cache::AuthCache};
 
 #[derive(Clone)]
 pub struct JwtVerify {
@@ -19,7 +17,7 @@ pub struct JwtVerify {
 
 impl JwtVerify {
     pub fn new(db: Data<DatabaseConnection>) -> Self {
-        JwtVerify { db }
+        Self { db }
     }
 }
 
@@ -29,24 +27,23 @@ where
 {
     type Response = ServiceResponse<BoxBody>;
     type Error = Error;
-    type Transform = JwtVerifyMiddleware<S>;
+    type Transform = Rc<AuthMiddleware<S>>;
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ok(JwtVerifyMiddleware {
+        ok(Rc::new(AuthMiddleware {
             service: Rc::new(service),
             db: self.db.clone(),
-        })
+        }))
     }
 }
 
-pub struct JwtVerifyMiddleware<S> {
+pub struct AuthMiddleware<S> {
     service: Rc<S>,
-    db: Data<DatabaseConnection>,
+    db: Data<DatabaseConnection>
 }
-
-impl<S> Service<ServiceRequest> for JwtVerifyMiddleware<S>
+impl<S> Service<ServiceRequest> for AuthMiddleware<S>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<BoxBody>, Error = Error> + 'static,
 {
@@ -60,32 +57,46 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let service = Rc::clone(&self.service);
+        let auth_cache = req.app_data::<web::Data<AuthCache>>().unwrap().clone();
         let db = self.db.clone();
 
         Box::pin(async move {
-            // Extract the Authorization header
             if let Some(auth_header) = req.headers().get("Authorization") {
                 if let Ok(auth_str) = auth_header.to_str() {
-                    // Decode the JWT and get the user_id
                     let claims = decode_jwt(auth_str)?;
                     let user_id = claims.sub.parse::<i32>().map_err(|_| {
-                        // Convert HttpResponse to actix_web::Error
                         let response = HttpResponse::Unauthorized()
                             .json(json!({"message": "Invalid user ID in token"}));
                         actix_web::Error::from(InternalError::from_response("", response))
                     })?;
 
-                    // Find the user by ID
-                    let user = find_user_by_id(&db, user_id).await?.expect("User not found");
+                    // Try to get the user from the cache
+                    let user = if let Some(user) = auth_cache.get_user(user_id).await {
+                        user
+                    } else {
+                        // If not in cache, fetch from DB and store in cache
+                        let user_result = find_user_by_id(&db, user_id).await;
+                        match user_result {
+                            Ok(Some(user)) => {
+                                let authenticated_user = AuthenticatedUser(user.clone());
+                                auth_cache.store_user(authenticated_user.clone()).await;
+                                authenticated_user
+                            }
+                            Ok(None) => {
+                                let response = HttpResponse::Unauthorized()
+                                    .json(json!({"message": "User not found"}));
+                                return Err(actix_web::Error::from(InternalError::from_response("", response)));
+                            }
+                            Err(err) => return Err(err.into()),
+                        }
+                    };
 
-                    req.extensions_mut().insert(AuthenticatedUser(user));
+                    req.extensions_mut().insert(user);
 
-                    // Proceed to the next service if the header is valid
                     return service.call(req).await;
                 }
             }
 
-            // If the Authorization header is missing or invalid, return an error response
             let response = HttpResponse::Unauthorized()
                 .json(json!({"message": "Authorization token is missing or invalid"}))
                 .map_into_boxed_body();
